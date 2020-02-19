@@ -1,0 +1,2 @@
+Dependencies for Project 'timer-int', Target 'Hardware (Load to Flash)': (DO NOT MODIFY !)
+F (.\timer-int.s)(0x5CA639B8)(--cpu ARM7TDMI --pd "__EVAL SETA 1" -g --apcs=interwork -I C:\Keil_v5\ARM\RV31\INC-I C:\Keil_v5\ARM\CMSIS\Include-I C:\Keil_v5\ARM\Inc\Philips--pd "__UVISION_VERSION SETA 516"--list .\listings\timer-int.lst --xref -o .\objects\timer-int.o --depend .\objects\timer-int.d)

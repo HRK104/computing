@@ -1,0 +1,6 @@
+--cpu ARM7TDMI
+".\objects\timer.o"
+--scatter ".\lpc2468Flash.sct"
+--summary_stderr --info summarysizes --map --xref --callgraph --symbols
+--info sizes --info totals --info unused --info veneers
+--list ".\Listings\timer.map" -o .\Objects\timer.axf

@@ -1,0 +1,136 @@
+
+
+
+ARM Macro Assembler    Page 1 
+
+
+    1 00000000         ;
+    2 00000000         ; CS1022 Introduction to Computing II 2018/2019
+    3 00000000         ; Timer Example
+    4 00000000         ;
+    5 00000000         
+    6 00000000 E0004004 
+                       T0TCR   EQU              0xE0004004
+    7 00000000 E0004018 
+                       T0MR0   EQU              0xE0004018
+    8 00000000 E0004014 
+                       T0MCR   EQU              0xE0004014
+    9 00000000         
+   10 00000000                 AREA             RESET, CODE, READONLY
+   11 00000000                 ENTRY
+   12 00000000         
+   13 00000000         ; Set match register for 5 secs using Match Register
+   14 00000000         ; Assuming a 1Mhz clock input to TIMER0, set MR
+   15 00000000         ; MR0 (0xE0004018) to 5,000,000
+   16 00000000 E59F402C        LDR              R4, =T0MR0
+   17 00000004 E59F502C        LDR              R5, =5000000
+   18 00000008 E5845000        STR              R5, [R4]
+   19 0000000C         
+   20 0000000C         ; Stop on match using Match Control Register
+   21 0000000C         ; Set bit 2 of MCR (0xE0004014) to 1 to stop the counter
+                        after
+   22 0000000C         ; match (5 secs)
+   23 0000000C E59F4028        LDR              R4, =T0MCR
+   24 00000010 E3A05004        LDR              R5, =0x04
+   25 00000014 E1C450B0        STRH             R5, [R4]
+   26 00000018         
+   27 00000018         ; Start TIMER0 using the Timer Control Register
+   28 00000018         ; Set bit 0 of TCR (0xE0004004) to enable the timer
+   29 00000018 E59F4020        LDR              R4, =T0TCR
+   30 0000001C E3A05001        LDR              R5, =0x01
+   31 00000020 E5C45000        STRB             R5, [R4]
+   32 00000024         
+   33 00000024         
+   34 00000024         ; Keep testing bit 0 of the Timer Control Register (0xE0
+                       004004)
+   35 00000024         ; until the 1 that we set above becomes 0 again, indicat
+                       ing that
+   36 00000024         ; the timer has stopped
+   37 00000024         whWait
+   38 00000024 E5D45000        LDRB             R5, [R4]
+   39 00000028 E3150001        TST              R5, #1
+   40 0000002C 1AFFFFFC        BNE              whWait
+   41 00000030         
+   42 00000030         ; timer finished!
+   43 00000030         
+   44 00000030 EAFFFFFE 
+                       STOP    B                STOP
+   45 00000034         
+   46 00000034                 END
+              E0004018 
+              004C4B40 
+              E0004014 
+              E0004004 
+Command Line: --debug --xref --diag_suppress=9931 --apcs=interwork --depend=.\o
+bjects\timer.d -o.\objects\timer.o -IC:\Keil_v5\ARM\RV31\INC -IC:\Keil_v5\ARM\C
+
+
+
+ARM Macro Assembler    Page 2 
+
+
+MSIS\Include -IC:\Keil_v5\ARM\Inc\Philips --predefine="__EVAL SETA 1" --predefi
+ne="__UVISION_VERSION SETA 516" --list=.\listings\timer.lst timer.s
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Relocatable symbols
+
+RESET 00000000
+
+Symbol: RESET
+   Definitions
+      At line 10 in file timer.s
+   Uses
+      None
+Comment: RESET unused
+STOP 00000030
+
+Symbol: STOP
+   Definitions
+      At line 44 in file timer.s
+   Uses
+      At line 44 in file timer.s
+Comment: STOP used once
+whWait 00000024
+
+Symbol: whWait
+   Definitions
+      At line 37 in file timer.s
+   Uses
+      At line 40 in file timer.s
+Comment: whWait used once
+3 symbols
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Absolute symbols
+
+T0MCR E0004014
+
+Symbol: T0MCR
+   Definitions
+      At line 8 in file timer.s
+   Uses
+      At line 23 in file timer.s
+Comment: T0MCR used once
+T0MR0 E0004018
+
+Symbol: T0MR0
+   Definitions
+      At line 7 in file timer.s
+   Uses
+      At line 16 in file timer.s
+Comment: T0MR0 used once
+T0TCR E0004004
+
+Symbol: T0TCR
+   Definitions
+      At line 6 in file timer.s
+   Uses
+      At line 29 in file timer.s
+Comment: T0TCR used once
+3 symbols
+340 symbols in table

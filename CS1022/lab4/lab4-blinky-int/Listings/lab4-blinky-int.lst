@@ -1,0 +1,718 @@
+
+
+
+ARM Macro Assembler    Page 1 
+
+
+    1 00000000         ;
+    2 00000000         ; CS1022 Introduction to Computing II 2018/2019
+    3 00000000         ; Lab 4 - blinky-int
+    4 00000000         ;
+    5 00000000 E0004000 
+                       T0IR    EQU              0xE0004000
+    6 00000000 E0004004 
+                       T0TCR   EQU              0xE0004004
+    7 00000000 E0004018 
+                       T0MR0   EQU              0xE0004018
+    8 00000000 E0004014 
+                       T0MCR   EQU              0xE0004014
+    9 00000000         
+   10 00000000 E002C010 
+                       PINSEL4 EQU              0xE002C010
+   11 00000000         
+   12 00000000 3FFFC041 
+                       FIO2DIR1
+                               EQU              0x3FFFC041
+   13 00000000 3FFFC055 
+                       FIO2PIN1
+                               EQU              0x3FFFC055
+   14 00000000         
+   15 00000000 FFFFF00C 
+                       VICIntSelect
+                               EQU              0xFFFFF00C
+   16 00000000 FFFFF010 
+                       VICIntEnable
+                               EQU              0xFFFFF010
+   17 00000000 FFFFF100 
+                       VICVectAddr0
+                               EQU              0xFFFFF100
+   18 00000000 FFFFF200 
+                       VICVectPri0
+                               EQU              0xFFFFF200
+   19 00000000 FFFFFF00 
+                       VICVectAddr
+                               EQU              0xFFFFFF00
+   20 00000000         
+   21 00000000 00000004 
+                       VICVectT0
+                               EQU              4
+   22 00000000         
+   23 00000000 00000080 
+                       Irq_Stack_Size
+                               EQU              0x80
+   24 00000000         
+   25 00000000 00000010 
+                       Mode_USR
+                               EQU              0x10
+   26 00000000 00000012 
+                       Mode_IRQ
+                               EQU              0x12
+   27 00000000 00000080 
+                       I_Bit   EQU              0x80        ; when I bit is set
+                                                            , IRQ is disabled
+   28 00000000 00000040 
+                       F_Bit   EQU              0x40        ; when F bit is set
+                                                            , FIQ is disabled
+
+
+
+ARM Macro Assembler    Page 2 
+
+
+   29 00000000         
+   30 00000000         
+   31 00000000                 AREA             RESET, CODE, READONLY
+   32 00000000                 ENTRY
+   33 00000000         
+   34 00000000         ; Exception Vectors
+   35 00000000         
+   36 00000000 EA000006        B                Reset_Handler ; 0x00000000
+   37 00000004 EA000031        B                Undef_Handler ; 0x00000004
+   38 00000008 EA000031        B                SWI_Handler ; 0x00000008
+   39 0000000C EA000031        B                PAbt_Handler ; 0x0000000C
+   40 00000010 EA000031        B                DAbt_Handler ; 0x00000010
+   41 00000014 E1A00000        NOP                          ; 0x00000014
+   42 00000018 EA000030        B                IRQ_Handler ; 0x00000018
+   43 0000001C EA000035        B                FIQ_Handler ; 0x0000001C
+   44 00000020         
+   45 00000020         ;
+   46 00000020         ; Reset Exception Handler
+   47 00000020         ;
+   48 00000020         Reset_Handler
+   49 00000020         
+   50 00000020         ;
+   51 00000020         ; Initialize Stack Pointers (SP) for each mode we are us
+                       ing
+   52 00000020         ;
+   53 00000020         
+   54 00000020         ; Stack Top
+   55 00000020 E59F0118        LDR              R0, =0x40010000
+   56 00000024         
+   57 00000024         ; Enter undef mode and set initial SP
+   58 00000024 E321F0D2        MSR              CPSR_c, #Mode_IRQ:OR:I_Bit:OR:F
+_Bit
+   59 00000028 E1A0D000        MOV              SP, R0
+   60 0000002C E2400080        SUB              R0, R0, #Irq_Stack_Size
+   61 00000030         
+   62 00000030         ; Enter user mode and set initial SP
+   63 00000030 E321F010        MSR              CPSR_c, #Mode_USR
+   64 00000034 E1A0D000        MOV              SP, R0
+   65 00000038         
+   66 00000038         
+   67 00000038         ;
+   68 00000038         ; Initialise peripherals here
+   69 00000038         ;
+   70 00000038         
+   71 00000038         ;   Initialise TIMER0 (see timer-int example)
+   72 00000038         ;
+   73 00000038         ; Configure TIMER0
+   74 00000038         ;
+   75 00000038         ; Stop and reset TIMER0 using Timer Control Register
+   76 00000038         ; Set bit 0 of TCR to 0 to stop TIMER
+   77 00000038         ; Set bit 1 of TCR to 1 to reset TIMER
+   78 00000038 E59F5104        LDR              R5, =T0TCR
+   79 0000003C E3A06002        LDR              R6, =0x2
+   80 00000040 E5C56000        STRB             R6, [R5]
+   81 00000044         ; Clear any previous TIMER0 interrupt by writing 0xFF to
+                        the TIMER0
+   82 00000044         ; Interrupt Register (T0IR)
+   83 00000044 E59F50FC        LDR              R5, =T0IR
+   84 00000048 E3A060FF        LDR              R6, =0xFF
+
+
+
+ARM Macro Assembler    Page 3 
+
+
+   85 0000004C E5C56000        STRB             R6, [R5]
+   86 00000050         ; Set match register for 1 secs using Match Register
+   87 00000050         ; Assuming a 1Mhz clock input to TIMER0, set MR
+   88 00000050         ; MR0 (0xE0004018) to 1,000,000
+   89 00000050 E59F40F4        LDR              R4, =T0MR0
+   90 00000054 E59F50F4        LDR              R5, =1000000
+   91 00000058 E5845000        STR              R5, [R4]
+   92 0000005C         ; IRQ on match using Match Control Register
+   93 0000005C         ; Set bit 0 of MCR to 1 to turn on interrupts
+   94 0000005C         ; Set bit 1 of MCR to 1 to reset counter to 0 after ever
+                       y match
+   95 0000005C         ; Set bit 2 of MCR to 0 to leave the counter enabled aft
+                       er match
+   96 0000005C E59F40F0        LDR              R4, =T0MCR
+   97 00000060 E3A05003        LDR              R5, =0x03
+   98 00000064 E1C450B0        STRH             R5, [R4]
+   99 00000068         
+  100 00000068         
+  101 00000068         ;   Initialise VIC for TIMER0 interrupts (see timer-int 
+                       example)
+  102 00000068         ;
+  103 00000068         ; Configure VIC for TIMER0 interrupts
+  104 00000068         ;
+  105 00000068         ; Useful VIC vector numbers and masks for following code
+                       
+  106 00000068 E3A03004        LDR              R3, =VICVectT0 ; vector 4
+  107 0000006C E3A04010        LDR              R4, =(1 << VICVectT0) ; bit mas
+                                                            k for vector 4
+  108 00000070         ; VICIntSelect - Clear bit 4 of VICIntSelect register to
+                        cause
+  109 00000070         ; channel 4 (TIMER0) to raise IRQs (not FIQs)
+  110 00000070 E59F50E0        LDR              R5, =VICIntSelect ; addr = VICV
+                                                            ectSelect;
+  111 00000074 E5956000        LDR              R6, [R5]    ; tmp = Memory.Word
+                                                            (addr);
+  112 00000078 E1C66004        BIC              R6, R6, R4  ; Clear bit for Vec
+                                                            tor 0x04
+  113 0000007C E5856000        STR              R6, [R5]    ; Memory.Word(addr)
+                                                             = tmp;
+  114 00000080         ; Set Priority for VIC channel 4 (TIMER0) to lowest (15)
+                        by setting
+  115 00000080         ; VICVectPri4 to 15. Note: VICVectPri4 is the element at
+                        index 4 of an
+  116 00000080         ; array of 4-byte values that starts at VICVectPri0.
+  117 00000080         ; i.e. VICVectPri4=VICVectPri0+(4*4)
+  118 00000080 E59F50D4        LDR              R5, =VICVectPri0 ; addr = VICVe
+                                                            ctPri0;
+  119 00000084 E3A0600F        MOV              R6, #15     ; pri = 15;
+  120 00000088 E7856103        STR              R6, [R5, R3, LSL #2] ; Memory.W
+                                                            ord(addr + vector *
+                                                             4) = pri;
+  121 0000008C         ; Set Handler routine address for VIC channel 4 (TIMER0)
+                        to address of
+  122 0000008C         ; our handler routine (TimerHandler). Note: VICVectAddr4
+                        is the element
+  123 0000008C         ; at index 4 of an array of 4-byte values that starts at
+                        VICVectAddr0.
+  124 0000008C         ; i.e. VICVectAddr4=VICVectAddr0+(4*4)
+  125 0000008C E59F50CC        LDR              R5, =VICVectAddr0 ; addr = VICV
+
+
+
+ARM Macro Assembler    Page 4 
+
+
+                                                            ectAddr0;
+  126 00000090 E59F60CC        LDR              R6, =Timer_Handler ; handler = 
+                                                            address of TimerHan
+                                                            dler;
+  127 00000094 E7856103        STR              R6, [R5, R3, LSL #2] ; Memory.W
+                                                            ord(addr + vector *
+                                                             4) = handler
+  128 00000098         ; Enable VIC channel 4 (TIMER0) by writing a 1 to bit 4 
+                       of VICIntEnable
+  129 00000098 E59F50C8        LDR              R5, =VICIntEnable ; addr = VICI
+                                                            ntEnable;
+  130 0000009C E5854000        STR              R4, [R5]    ; enable interrupts
+                                                             for vector 0x4
+  131 000000A0         
+  132 000000A0         
+  133 000000A0         
+  134 000000A0         ;   Initialise P2.10 for GPIO output (see blinky example
+                       )
+  135 000000A0         ; Enable P2.10 for GPIO
+  136 000000A0 E59F50C4        LDR              R5, =PINSEL4 ; load address of 
+                                                            PINSEL4
+  137 000000A4 E5956000        LDR              R6, [R5]    ; read current PINS
+                                                            EL4 value
+  138 000000A8 E3C66603        BIC              R6, #(0x3 << 20) ; modify bits 
+                                                            20 and 21 to 00
+  139 000000AC E5856000        STR              R6, [R5]    ; write new PINSEL4
+                                                             value
+  140 000000B0         ; Set P2.10 for output
+  141 000000B0 E59F50B8        LDR              R5, =FIO2DIR1 ; load address of
+                                                             FIO2DIR1
+  142 000000B4 E5D56000        LDRB             R6, [R5]    ; read current FIO2
+                                                            DIR1 value
+  143 000000B8 E3866004        ORR              R6, #(0x1 << 2) ; modify bit 2 
+                                                            to 1 for output, le
+                                                            aving other bits un
+                                                            modified
+  144 000000BC E5C56000        STRB             R6, [R5]    ; write new FIO2DIR
+                                                            1
+  145 000000C0         ; Set match register for 1 secs using Match Register
+  146 000000C0         ;   Assuming a 1Mhz clock input to TIMER0, set MR
+  147 000000C0         ;   MR0 (0xE0004018) to 51,000,000
+  148 000000C0         ;LDR R4, =T0MR0
+  149 000000C0         ;LDR R5, =1000000
+  150 000000C0         ;STR R5, [R4]
+  151 000000C0         ; Stop on match using Match Control Register
+  152 000000C0         ;   Set bit 2 of MCR (0xE0004014) to 1 to stop the count
+                       er after
+  153 000000C0         ;   match (1 secs)
+  154 000000C0         ;LDR R4, =T0MCR
+  155 000000C0         ;LDR R5, =0x04
+  156 000000C0         ;STRH R5, [R4]
+  157 000000C0         
+  158 000000C0         ;   Start TIMER0 (see timer-int example)
+  159 000000C0         ;
+  160 000000C0         ;
+  161 000000C0         ; Finally ... start TIMER0
+  162 000000C0         ;
+  163 000000C0         
+  164 000000C0         ; Start TIMER0 using the Timer Control Register
+
+
+
+ARM Macro Assembler    Page 5 
+
+
+  165 000000C0         ; Set bit 0 of TCR (0xE0004004) to enable the timer
+  166 000000C0 E59F407C        LDR              R4, =T0TCR
+  167 000000C4 E3A05001        LDR              R5, =0x01
+  168 000000C8 E5C45000        STRB             R5, [R4]
+  169 000000CC         ;
+  170 000000CC         ; Nothing more to do here!!! The rest of our programs fu
+                       nctionality
+  171 000000CC         ; takes place in the context of our IRQ handler (which w
+                       ill interrupt
+  172 000000CC         ; the STOP B STOP loop).
+  173 000000CC         ;
+  174 000000CC         ; Real systems often implement an "idle loop" here, for 
+                       example, doing
+  175 000000CC         ; some housekeeping or putting the processor into a powe
+                       r-saving state.
+  176 000000CC         ;
+  177 000000CC         
+  178 000000CC EAFFFFFE 
+                       STOP    B                STOP
+  179 000000D0         
+  180 000000D0         
+  181 000000D0         ;
+  182 000000D0         ; Software Interrupt Exception Handler
+  183 000000D0         ;
+  184 000000D0         Undef_Handler
+  185 000000D0 EAFFFFFE        B                Undef_Handler
+  186 000000D4         
+  187 000000D4         ;
+  188 000000D4         ; Software Interrupt Exception Handler
+  189 000000D4         ;
+  190 000000D4         SWI_Handler
+  191 000000D4 EAFFFFFE        B                SWI_Handler
+  192 000000D8         
+  193 000000D8         ;
+  194 000000D8         ; Prefetch Abort Exception Handler
+  195 000000D8         ;
+  196 000000D8         PAbt_Handler
+  197 000000D8 EAFFFFFE        B                PAbt_Handler
+  198 000000DC         
+  199 000000DC         ;
+  200 000000DC         ; Data Abort Exception Handler
+  201 000000DC         ;
+  202 000000DC         DAbt_Handler
+  203 000000DC EAFFFFFE        B                DAbt_Handler
+  204 000000E0         
+  205 000000E0         ;
+  206 000000E0         ; Interrupt ReQuest (IRQ) Exception Handler (top level -
+                        all devices)
+  207 000000E0         ;
+  208 000000E0         IRQ_Handler
+  209 000000E0 E24EE004        SUB              lr, lr, #4  ; for IRQs, LR is a
+                                                            lways 4 more than t
+                                                            he
+  210 000000E4         ; real return address
+  211 000000E4 E92D400F        STMFD            sp!, {r0-r3,lr} 
+                                                            ; save r0-r3 and lr
+                                                            
+  212 000000E8         
+  213 000000E8 E3E000FF        LDR              r0, =VICVectAddr ; address of V
+
+
+
+ARM Macro Assembler    Page 6 
+
+
+                                                            IC Vector Address m
+                                                            emory-
+  214 000000EC         ; mapped register
+  215 000000EC         
+  216 000000EC E1A0E00F        MOV              lr, pc      ; can’t use BL he
+                                                            re because we are b
+                                                            ranching
+  217 000000F0 E590F000        LDR              pc, [r0]    ; to a different su
+                                                            broutine dependant 
+                                                            on device
+  218 000000F4         ; raising the IRQ - this is a manual BL !!
+  219 000000F4         
+  220 000000F4 E8FD800F        LDMFD            sp!, {r0-r3, pc}^ ; restore r0-
+                                                            r3, lr and CPSR
+  221 000000F8         
+  222 000000F8         ;
+  223 000000F8         ; Fast Interrupt reQuest Exception Handler
+  224 000000F8         ;
+  225 000000F8         FIQ_Handler
+  226 000000F8 EAFFFFFE        B                FIQ_Handler
+  227 000000FC         
+  228 000000FC         ;
+  229 000000FC         ; TIMER0 IRQ Handler (device-specific handler called by 
+                       top-level IRQ_Handler)
+  230 000000FC         ;
+  231 000000FC         Timer_Handler
+  232 000000FC         
+  233 000000FC E92D4030        STMFD            sp!, {r4-r5, lr}
+  234 00000100         
+  235 00000100         ;
+  236 00000100         ; your timer irq handler goes here
+  237 00000100         ; see timer-int example to see how to handle TIMER inter
+                       rupts
+  238 00000100         ; see blinky example to see how to blink the LED
+  239 00000100         ;
+  240 00000100         
+  241 00000100         
+  242 00000100         ; Reset TIMER0 interrupt by writing 0xFF to T0IR
+  243 00000100 E59F4040        LDR              R4, =T0IR
+  244 00000104 E3A050FF        MOV              R5, #0xFF
+  245 00000108 E5C45000        STRB             R5, [R4]
+  246 0000010C         
+  247 0000010C         ;
+  248 0000010C         ; take some action here when the timer expires!
+  249 0000010C         ;
+  250 0000010C         
+  251 0000010C         ; read current P2.10 output value
+  252 0000010C         ;   0 or 1 in bit 2 of FIO2PIN1
+  253 0000010C E3A04004        LDR              R4, =0x04   ;   setup bit mask 
+                                                            for P2.10 bit in FI
+                                                            O2PIN1
+  254 00000110 E59F505C        LDR              R5, =FIO2PIN1 ;
+  255 00000114 E5D56000        LDRB             R6, [R5]    ;   read FIO2PIN1
+  256 00000118         
+  257 00000118         ; modify P2.10 output (leaving other pin outputs control
+                       led by
+  258 00000118         ;   FIO2PIN1 with their original value)
+  259 00000118 E1160004        TST              R6, R4      ;   if (LED off)
+  260 0000011C 1A000001        BNE              elsOff      ;   {
+
+
+
+ARM Macro Assembler    Page 7 
+
+
+  261 00000120 E1866004        ORR              R6, R6, R4  ;     set bit 2 (tu
+                                                            rn LED on)
+  262 00000124 EA000000        B                endIf       ;   }
+  263 00000128         elsOff                               ;   else {
+  264 00000128 E1C66004        BIC              R6, R6, R4  ;     clear bit 2 (
+                                                            turn LED on)
+  265 0000012C         endIf                                ;   }
+  266 0000012C         
+  267 0000012C         ; write new FIO2PIN1 value
+  268 0000012C E5C56000        STRB             R6, [R5]
+  269 00000130         
+  270 00000130         
+  271 00000130         ; Clear source of interrupt by writing 0 to VICVectAddr
+  272 00000130 E3E040FF        LDR              R4, =VICVectAddr
+  273 00000134 E3A05000        MOV              R5, #0
+  274 00000138 E5845000        STR              R5, [R4]
+  275 0000013C         
+  276 0000013C         
+  277 0000013C E8BD8030        LDMFD            sp!, {r4-r5, pc}
+  278 00000140         
+  279 00000140                 END
+              40010000 
+              E0004004 
+              E0004000 
+              E0004018 
+              000F4240 
+              E0004014 
+              FFFFF00C 
+              FFFFF200 
+              FFFFF100 
+              00000000 
+              FFFFF010 
+              E002C010 
+              3FFFC041 
+              3FFFC055 
+Command Line: --debug --xref --diag_suppress=9931 --apcs=interwork --depend=.\o
+bjects\lab4-blinky-int.d -o.\objects\lab4-blinky-int.o -IC:\Keil_v5\ARM\RV31\IN
+C -IC:\Keil_v5\ARM\CMSIS\Include -IC:\Keil_v5\ARM\Inc\Philips --predefine="__EV
+AL SETA 1" --predefine="__UVISION_VERSION SETA 516" --list=.\listings\lab4-blin
+ky-int.lst lab4-blinky-int.s
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Relocatable symbols
+
+DAbt_Handler 000000DC
+
+Symbol: DAbt_Handler
+   Definitions
+      At line 202 in file lab4-blinky-int.s
+   Uses
+      At line 40 in file lab4-blinky-int.s
+      At line 203 in file lab4-blinky-int.s
+
+FIQ_Handler 000000F8
+
+Symbol: FIQ_Handler
+   Definitions
+      At line 225 in file lab4-blinky-int.s
+   Uses
+      At line 43 in file lab4-blinky-int.s
+      At line 226 in file lab4-blinky-int.s
+
+IRQ_Handler 000000E0
+
+Symbol: IRQ_Handler
+   Definitions
+      At line 208 in file lab4-blinky-int.s
+   Uses
+      At line 42 in file lab4-blinky-int.s
+Comment: IRQ_Handler used once
+PAbt_Handler 000000D8
+
+Symbol: PAbt_Handler
+   Definitions
+      At line 196 in file lab4-blinky-int.s
+   Uses
+      At line 39 in file lab4-blinky-int.s
+      At line 197 in file lab4-blinky-int.s
+
+RESET 00000000
+
+Symbol: RESET
+   Definitions
+      At line 31 in file lab4-blinky-int.s
+   Uses
+      None
+Comment: RESET unused
+Reset_Handler 00000020
+
+Symbol: Reset_Handler
+   Definitions
+      At line 48 in file lab4-blinky-int.s
+   Uses
+      At line 36 in file lab4-blinky-int.s
+Comment: Reset_Handler used once
+STOP 000000CC
+
+Symbol: STOP
+   Definitions
+      At line 178 in file lab4-blinky-int.s
+   Uses
+      At line 178 in file lab4-blinky-int.s
+Comment: STOP used once
+
+
+
+ARM Macro Assembler    Page 2 Alphabetic symbol ordering
+Relocatable symbols
+
+SWI_Handler 000000D4
+
+Symbol: SWI_Handler
+   Definitions
+      At line 190 in file lab4-blinky-int.s
+   Uses
+      At line 38 in file lab4-blinky-int.s
+      At line 191 in file lab4-blinky-int.s
+
+Timer_Handler 000000FC
+
+Symbol: Timer_Handler
+   Definitions
+      At line 231 in file lab4-blinky-int.s
+   Uses
+      At line 126 in file lab4-blinky-int.s
+Comment: Timer_Handler used once
+Undef_Handler 000000D0
+
+Symbol: Undef_Handler
+   Definitions
+      At line 184 in file lab4-blinky-int.s
+   Uses
+      At line 37 in file lab4-blinky-int.s
+      At line 185 in file lab4-blinky-int.s
+
+elsOff 00000128
+
+Symbol: elsOff
+   Definitions
+      At line 263 in file lab4-blinky-int.s
+   Uses
+      At line 260 in file lab4-blinky-int.s
+Comment: elsOff used once
+endIf 0000012C
+
+Symbol: endIf
+   Definitions
+      At line 265 in file lab4-blinky-int.s
+   Uses
+      At line 262 in file lab4-blinky-int.s
+Comment: endIf used once
+12 symbols
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Absolute symbols
+
+FIO2DIR1 3FFFC041
+
+Symbol: FIO2DIR1
+   Definitions
+      At line 12 in file lab4-blinky-int.s
+   Uses
+      At line 141 in file lab4-blinky-int.s
+Comment: FIO2DIR1 used once
+FIO2PIN1 3FFFC055
+
+Symbol: FIO2PIN1
+   Definitions
+      At line 13 in file lab4-blinky-int.s
+   Uses
+      At line 254 in file lab4-blinky-int.s
+Comment: FIO2PIN1 used once
+F_Bit 00000040
+
+Symbol: F_Bit
+   Definitions
+      At line 28 in file lab4-blinky-int.s
+   Uses
+      At line 58 in file lab4-blinky-int.s
+Comment: F_Bit used once
+I_Bit 00000080
+
+Symbol: I_Bit
+   Definitions
+      At line 27 in file lab4-blinky-int.s
+   Uses
+      At line 58 in file lab4-blinky-int.s
+Comment: I_Bit used once
+Irq_Stack_Size 00000080
+
+Symbol: Irq_Stack_Size
+   Definitions
+      At line 23 in file lab4-blinky-int.s
+   Uses
+      At line 60 in file lab4-blinky-int.s
+Comment: Irq_Stack_Size used once
+Mode_IRQ 00000012
+
+Symbol: Mode_IRQ
+   Definitions
+      At line 26 in file lab4-blinky-int.s
+   Uses
+      At line 58 in file lab4-blinky-int.s
+Comment: Mode_IRQ used once
+Mode_USR 00000010
+
+Symbol: Mode_USR
+   Definitions
+      At line 25 in file lab4-blinky-int.s
+   Uses
+      At line 63 in file lab4-blinky-int.s
+Comment: Mode_USR used once
+PINSEL4 E002C010
+
+Symbol: PINSEL4
+
+
+
+ARM Macro Assembler    Page 2 Alphabetic symbol ordering
+Absolute symbols
+
+   Definitions
+      At line 10 in file lab4-blinky-int.s
+   Uses
+      At line 136 in file lab4-blinky-int.s
+Comment: PINSEL4 used once
+T0IR E0004000
+
+Symbol: T0IR
+   Definitions
+      At line 5 in file lab4-blinky-int.s
+   Uses
+      At line 83 in file lab4-blinky-int.s
+      At line 243 in file lab4-blinky-int.s
+
+T0MCR E0004014
+
+Symbol: T0MCR
+   Definitions
+      At line 8 in file lab4-blinky-int.s
+   Uses
+      At line 96 in file lab4-blinky-int.s
+Comment: T0MCR used once
+T0MR0 E0004018
+
+Symbol: T0MR0
+   Definitions
+      At line 7 in file lab4-blinky-int.s
+   Uses
+      At line 89 in file lab4-blinky-int.s
+Comment: T0MR0 used once
+T0TCR E0004004
+
+Symbol: T0TCR
+   Definitions
+      At line 6 in file lab4-blinky-int.s
+   Uses
+      At line 78 in file lab4-blinky-int.s
+      At line 166 in file lab4-blinky-int.s
+
+VICIntEnable FFFFF010
+
+Symbol: VICIntEnable
+   Definitions
+      At line 16 in file lab4-blinky-int.s
+   Uses
+      At line 129 in file lab4-blinky-int.s
+Comment: VICIntEnable used once
+VICIntSelect FFFFF00C
+
+Symbol: VICIntSelect
+   Definitions
+      At line 15 in file lab4-blinky-int.s
+   Uses
+      At line 110 in file lab4-blinky-int.s
+Comment: VICIntSelect used once
+VICVectAddr FFFFFF00
+
+Symbol: VICVectAddr
+   Definitions
+
+
+
+ARM Macro Assembler    Page 3 Alphabetic symbol ordering
+Absolute symbols
+
+      At line 19 in file lab4-blinky-int.s
+   Uses
+      At line 213 in file lab4-blinky-int.s
+      At line 272 in file lab4-blinky-int.s
+
+VICVectAddr0 FFFFF100
+
+Symbol: VICVectAddr0
+   Definitions
+      At line 17 in file lab4-blinky-int.s
+   Uses
+      At line 125 in file lab4-blinky-int.s
+Comment: VICVectAddr0 used once
+VICVectPri0 FFFFF200
+
+Symbol: VICVectPri0
+   Definitions
+      At line 18 in file lab4-blinky-int.s
+   Uses
+      At line 118 in file lab4-blinky-int.s
+Comment: VICVectPri0 used once
+VICVectT0 00000004
+
+Symbol: VICVectT0
+   Definitions
+      At line 21 in file lab4-blinky-int.s
+   Uses
+      At line 106 in file lab4-blinky-int.s
+      At line 107 in file lab4-blinky-int.s
+
+18 symbols
+364 symbols in table

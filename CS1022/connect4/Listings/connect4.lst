@@ -1,0 +1,3074 @@
+
+
+
+ARM Macro Assembler    Page 1 
+
+
+    1 00000000         ;
+    2 00000000         ; CS1022 Introduction to Computing II 2018/2019
+    3 00000000         ; Mid-Term Assignment - Connect 4 - SOLUTION
+    4 00000000         ;
+    5 00000000         ; get, put and puts subroutines provided by jones@scss.t
+                       cd.ie
+    6 00000000         ;
+    7 00000000         
+    8 00000000 E002C000 
+                       PINSEL0 EQU              0xE002C000
+    9 00000000 E000C000 
+                       U0RBR   EQU              0xE000C000
+   10 00000000 E000C000 
+                       U0THR   EQU              0xE000C000
+   11 00000000 E000C00C 
+                       U0LCR   EQU              0xE000C00C
+   12 00000000 E000C014 
+                       U0LSR   EQU              0xE000C014
+   13 00000000         
+   14 00000000         
+   15 00000000                 AREA             globals, DATA, READWRITE
+   16 00000000 00 00 00 
+              00 00 00 
+              00       BOARD   DCB              0,0,0,0,0,0,0
+   17 00000007 00 00 00 
+              00 00 00 
+              00               DCB              0,0,0,0,0,0,0
+   18 0000000E 00 00 00 
+              00 00 00 
+              00               DCB              0,0,0,0,0,0,0
+   19 00000015 00 00 00 
+              00 00 00 
+              00               DCB              0,0,0,0,0,0,0
+   20 0000001C 00 00 00 
+              00 00 00 
+              00               DCB              0,0,0,0,0,0,0
+   21 00000023 00 00 00 
+              00 00 00 
+              00               DCB              0,0,0,0,0,0,0
+   22 0000002A         
+   23 0000002A         
+   24 0000002A                 AREA             RESET, CODE, READONLY
+   25 00000000                 ENTRY
+   26 00000000         
+   27 00000000         ; initialise SP to top of RAM
+   28 00000000 E59FD934        LDR              R13, =0x40010000 ; initialse SP
+                                                            
+   29 00000004         
+   30 00000004         ; initialise the console
+   31 00000004 EB0001DB        BL               inithw
+   32 00000008         
+   33 00000008         ;
+   34 00000008         ; your program goes here
+   35 00000008         ;
+   36 00000008         
+   37 00000008 E3A07009        MOV              R7,#9       ;R7(lastMake of com
+                                                            puter) = 9
+   38 0000000C E59F092C        LDR              R0,=str_go  ;R0 = "Let's play C
+                                                            onnect4!!"
+
+
+
+ARM Macro Assembler    Page 2 
+
+
+   39 00000010 EB0001F1        BL               puts        ;present str_go
+   40 00000014 EA000003        B                preRunprogram ;go to preRunprog
+                                                            ram
+   41 00000018         restart
+   42 00000018 E59F0924        LDR              R0,=changeLine2
+   43 0000001C EB0001EE        BL               puts        ;change line
+   44 00000020 E59F0920        LDR              R0,=str_go_again ;R0 = "Let's p
+                                                            lay Connect4 again!
+                                                            !"
+   45 00000024 EB0001EC        BL               puts
+   46 00000028         preRunprogram
+   47 00000028 E59F091C        LDR              R0,=BOARD   ;R0 = board
+   48 0000002C EB00003E        BL               initialiseBoard ;go to initiali
+                                                            seBoard subroutine
+   49 00000030 E59F0914        LDR              R0,=BOARD   ;R0 = board
+   50 00000034 EB000046        BL               printBoard  ;go to printBoard s
+                                                            ubroutine
+   51 00000038 E3A06001        MOV              R6,#1       ;R6 = currentPlayer
+                                                                1-yellowPlayer,
+                                                             2-redPlayer
+   52 0000003C         choosePlayer
+   53 0000003C E3560001        CMP              R6,#1       ;R6 = 1?
+   54 00000040 0A000000        BEQ              selectYellow ;if so, go to sele
+                                                            ctYellow
+   55 00000044 1A000002        BNE              selectRed   ;if not, go to sele
+                                                            ctRed
+   56 00000048         selectYellow
+   57 00000048 E59F0900        LDR              R0,=yellowPlayer 
+                                                            ;R0 = yellowPlayer
+   58 0000004C EB0001E2        BL               puts
+   59 00000050 EA000007        B                runProgram  ;go to runProgram
+   60 00000054         selectRed
+   61 00000054         ;LDR R0,=redPlayer         ;original version
+   62 00000054         ;BL  puts
+   63 00000054 E59F08F8        LDR              R0,=computerTurn 
+                                                            ;R0 = computerTurn
+   64 00000058 EB0001DF        BL               puts
+   65 0000005C E59F08E8        LDR              R0,=BOARD   ;R0 = BOARD
+   66 00000060 E1A01007        MOV              R1,R7       ;R1 = R7 as a param
+                                                            eter
+   67 00000064 EB00014F        BL               computerMove ;go to computerMov
+                                                            e subroutine
+   68 00000068 E1A07000        MOV              R7,R0       ;R7 = R1
+   69 0000006C E2800031        ADD              R0,R0,#0x31 ;R0 =R0+0x31
+   70 00000070 EA000000        B                computerStaringPoint ;go to com
+                                                            puterStartingPoint
+   71 00000074         runProgram
+   72 00000074 EB0001C6        BL               get         ; get character
+   73 00000078         computerStaringPoint
+   74 00000078 EB0001CC        BL               put         ; put character
+   75 0000007C E3500071        CMP              R0,#0x71    ;R0 ='q' ?
+   76 00000080 0AFFFFE4        BEQ              restart     ;if so, go to "rest
+                                                            art"
+   77 00000084 E3500030        CMP              R0,#0x30
+   78 00000088 DA000023        BLE              invalidInput
+   79 0000008C E3500038        CMP              R0,#0x38
+   80 00000090 AA000021        BGE              invalidInput
+   81 00000094 E1A04000        MOV              R4,R0       ;R4 = R0 at a momen
+                                                            t
+
+
+
+ARM Macro Assembler    Page 3 
+
+
+   82 00000098 E59F08A4        LDR              R0,=changeLine2
+   83 0000009C EB0001CE        BL               puts        ;change line
+   84 000000A0 E1A00004        MOV              R0,R4       ;R0 = the location 
+                                                            user input
+   85 000000A4 E59F18A0        LDR              R1,=BOARD   ;R1 = the address o
+                                                            f board
+   86 000000A8 E1A02006        MOV              R2,R6       ;R2 = R6 = currentP
+                                                            layer
+   87 000000AC EB000053        BL               makeMove    ;go to makeMove sub
+                                                            routine
+   88 000000B0         
+   89 000000B0 E59F0894        LDR              R0,=BOARD   ;R0 = BOARD
+   90 000000B4 EB000063        BL               checkWinning ;go to checkWinnin
+                                                            g subroutine
+   91 000000B8 E1A05000        MOV              R5,R0       ;R5 = R0 = boolean 
+                                                            choosePlayer
+   92 000000BC E3550000        CMP              R5,#0       ;R5 = 0?
+   93 000000C0 0A000002        BEQ              nobodyWin   ;if so, go to nobod
+                                                            yWin
+   94 000000C4 E3550001        CMP              R5,#1       ;R5 = 1?
+   95 000000C8 0A000009        BEQ              winYellow   ;if so, go to winYe
+                                                            llow
+   96 000000CC 1A00000D        BNE              winRed      ;if not, go to winR
+                                                            ed
+   97 000000D0         nobodyWin
+   98 000000D0 E59F0874        LDR              R0,=BOARD   ;R0 = BOARD
+   99 000000D4 EB00001E        BL               printBoard  ;go to printBoard s
+                                                            ubroutine
+  100 000000D8 E3560001        CMP              R6,#1       ;R6 = 1?
+  101 000000DC 0A000000        BEQ              changeToRed ;if so, go to chang
+                                                            eToRed
+  102 000000E0 1A000001        BNE              changeToYellow ;if not, go to c
+                                                            hangeToYellow
+  103 000000E4         changeToRed
+  104 000000E4 E3A06002        MOV              R6,#2       ;R6=2
+  105 000000E8 EAFFFFD3        B                choosePlayer 
+                                                            ;go to choosePlayer
+                                                            
+  106 000000EC         changeToYellow
+  107 000000EC E3A06001        MOV              R6,#1       ;R6 =1
+  108 000000F0 EAFFFFD1        B                choosePlayer 
+                                                            ;go to choosePlayer
+                                                            
+  109 000000F4         winYellow
+  110 000000F4 E59F0850        LDR              R0,=BOARD
+  111 000000F8 EB000015        BL               printBoard  ;go to printBoard s
+                                                            ubroutine
+  112 000000FC E59F0854        LDR              R0,=yellowWin ;R0 = yellowWin
+  113 00000100 EB0001B5        BL               puts        ;present yellowWin
+  114 00000104 EA000004        B                finishLine  ;go to finisheLine
+  115 00000108         winRed
+  116 00000108 E59F083C        LDR              R0,=BOARD
+  117 0000010C EB000010        BL               printBoard  ;go to printBoard s
+                                                            ubroutine
+  118 00000110 E59F0844        LDR              R0,=redWin  ;R0 = redWin  
+  119 00000114 EB0001B0        BL               puts        ;present redWin
+  120 00000118 EAFFFFFF        B                finishLine  ;go to finishLine
+  121 0000011C         finishLine
+  122 0000011C         
+
+
+
+ARM Macro Assembler    Page 4 
+
+
+  123 0000011C         invalidInput
+  124 0000011C E59F083C        LDR              R0,=errorMessage
+  125 00000120 EB0001AD        BL               puts
+  126 00000124 EAFFFFC7        B                selectYellow
+  127 00000128         
+  128 00000128         
+  129 00000128 EAFFFFFE 
+                       stop    B                stop
+  130 0000012C         
+  131 0000012C         
+  132 0000012C         ;
+  133 0000012C         ; your subroutines go here
+  134 0000012C         ;
+  135 0000012C         
+  136 0000012C         
+  137 0000012C         ; initialiseBoard subroutine
+  138 0000012C         ; change all of the content within a board into 0
+  139 0000012C         ; parameters
+  140 0000012C         ;    r0: address of board
+  141 0000012C         ; return
+  142 0000012C         ;    nothing
+  143 0000012C         initialiseBoard
+  144 0000012C E92D4FF0        PUSH{R4-R11,LR}
+  145 00000130 E1A04000        MOV              R4,R0       ;R4 = R0 = board
+  146 00000134 E3A05000        MOV              R5,#0       ;R5 = count
+  147 00000138 E3A06000        MOV              R6,#0       ;R6: fixedNumber =0
+                                                            
+  148 0000013C         initialiseBoard1
+  149 0000013C E3550031        CMP              R5,#49      ;R5 = 49?
+  150 00000140 0A000002        BEQ              initialiseBoardEnd ;if so, go t
+                                                            o  initialiseBoardE
+                                                            nd
+  151 00000144 E7C06005        STRB             R6,[R0,R5,LSL #0]
+  152 00000148 E2855001        ADD              R5,R5,#1    ;count++
+  153 0000014C EAFFFFFA        B                initialiseBoard1
+  154 00000150         initialiseBoardEnd
+  155 00000150 E8BD8FF0        POP{R4-R11,PC}
+  156 00000154         
+  157 00000154         ; printBoard subroutine
+  158 00000154         ; print the content of a board
+  159 00000154         ; parameters
+  160 00000154         ;    r0: address of board
+  161 00000154         ; return
+  162 00000154         ;    nothing
+  163 00000154         printBoard
+  164 00000154 E92D4FF0        PUSH{R4-R11,LR}
+  165 00000158 E1A04000        MOV              R4,R0       ;R4 = R1 = BOARD
+  166 0000015C E59F0800        LDR              R0,=row     ;R0 = row
+  167 00000160 EB00019D        BL               puts
+  168 00000164         printBoard1
+  169 00000164 E3A05000        MOV              R5,#0       ;R5 = row   =0
+  170 00000168 E3A06000        MOV              R6,#0       ;R6 = column =0 
+  171 0000016C E3A07007        MOV              R7,#7       ;R7 = length =7
+  172 00000170 E3A08030        MOV              R8,#0x30    ;R8 = '0'
+  173 00000174 E3A0B001        LDR              R11,=1      ;R10 = rowNumberCou
+                                                            nt =1
+  174 00000178         printBoard2
+  175 00000178 E59F07E8        LDR              R0, =changeLine ;R0 -> ""
+  176 0000017C EB000196        BL               puts        ;put string
+
+
+
+ARM Macro Assembler    Page 5 
+
+
+  177 00000180 E1550007        CMP              R5,R7       ;for(row =0;
+  178 00000184 0A00001C        BEQ              printBoardEnd ;           row<l
+                                                            ength(7);row++)
+  179 00000188 E1A00008        MOV              R0,R8       ;R0 = R8
+  180 0000018C E080000B        ADD              R0,R0,R11   ;R0 = R0 + R11
+  181 00000190 EB000186        BL               put
+  182 00000194 E28BB001        ADD              R11,R11,#1  ;R11 = R11+1 
+  183 00000198         printBoard5
+  184 00000198 E1560007        CMP              R6,R7       ;for(column =0;
+  185 0000019C 0A000013        BEQ              printBoard4 ;              colu
+                                                            mn<length(7);column
+                                                            ++){
+  186 000001A0 E0090795        MUL              R9,R5,R7    ;index(Board[row]) 
+                                                            = row * length
+  187 000001A4 E0899006        ADD              R9,R9,R6    ;index(Board[row][c
+                                                            olumn) = index(Boar
+                                                            d[row]) + column
+  188 000001A8 E7D40009        LDRB             R0,[R4,R9,LSL #0] ;elem(Board[r
+                                                            ow,column]) = Memor
+                                                            y.Word[Board + (ind
+                                                            ex*4)]
+  189 000001AC E3500000        CMP              R0,#0       ;R0 = 0?
+  190 000001B0 1A000002        BNE              printbord6  ;if not, go to prin
+                                                            tBoard6
+  191 000001B4 E2800030        ADD              R0,R0,#0x30 ;elem(Board[row,col
+                                                            umn]) toASCIIcode
+  192 000001B8 EB00017C        BL               put
+  193 000001BC EA000007        B                printBord7  ;go to printboard7
+  194 000001C0         printbord6
+  195 000001C0 E3500001        CMP              R0,#1       ;R0 = 1?
+  196 000001C4 1A000002        BNE              printbord8  ;if not, go to prin
+                                                            tbord8
+  197 000001C8 E3A00059        MOV              R0, #0x59   ;R0 = 'Y'
+  198 000001CC EB000177        BL               put
+  199 000001D0 EA000002        B                printBord7  ;go to printBoard7 
+                                                            
+  200 000001D4         printbord8
+  201 000001D4 E3A00052        MOV              R0, #0x52   ;R0 = 'R'
+  202 000001D8 EB000174        BL               put
+  203 000001DC EAFFFFFF        B                printBord7  ;go to printBoard7 
+                                                            
+  204 000001E0         printBord7
+  205 000001E0 E2866001        ADD              R6,R6,#1    ;R6++
+  206 000001E4 E3A00020        LDR              R0,=0x20    ;R0 = 0x20
+  207 000001E8 EB000170        BL               put
+  208 000001EC EAFFFFE9        B                printBoard5 ;go to printBoard5
+  209 000001F0         printBoard4
+  210 000001F0 E3A06000        MOV              R6,#0       ;R6 = column =0 
+  211 000001F4 E2855001        ADD              R5,R5,#1    ;R5++
+  212 000001F8 EAFFFFDE        B                printBoard2 ;go to printBoard2
+  213 000001FC         printBoardEnd
+  214 000001FC E8BD8FF0        POP{R4-R11,PC}
+  215 00000200         
+  216 00000200         ; makeMOve subroutine
+  217 00000200         ; nake a move at the location an user input
+  218 00000200         ; parameters
+  219 00000200         ;    r0: the location an user input
+  220 00000200         ;    r1: address of board
+  221 00000200         ;    r2: currentPlayerColor  1-yellowPlayer, 2-redPlayer
+
+
+
+ARM Macro Assembler    Page 6 
+
+
+                       
+  222 00000200         ; return
+  223 00000200         ;    nothing
+  224 00000200         makeMove
+  225 00000200 E92D5FF0        PUSH{R4-R12,LR}
+  226 00000204 E1A04001        MOV              R4,R1       ;R4 = R1 = address 
+                                                            of board
+  227 00000208 E2405001        SUB              R5,R0,#1    ;R5 = R0 -1 = the l
+                                                            ocation an user inp
+                                                            ut -1
+  228 0000020C E2455030        SUB              R5,R5,#0x30 ;R5inAsciiToHexdeci
+                                                            malForm
+  229 00000210 E1A06002        MOV              R6,R2       ;R6 = R2 = current 
+                                                            player color
+  230 00000214 E3A08006        MOV              R8,#6       ;rowIndex
+  231 00000218 E3A09007        MOV              R9,#7       ;rowLength
+  232 0000021C         makeMove1
+  233 0000021C         
+  234 0000021C         makeMove4
+  235 0000021C E00A0998        MUL              R10,R8,R9   ;index(Board[row]) 
+                                                            = rowIdex* length
+  236 00000220 E08AA005        ADD              R10,R10,R5  ;index(Board[row][c
+                                                            olumn) = index(Boar
+                                                            d[row]) + column
+  237 00000224 E7D4B00A        LDRB             R11,[R4,R10,LSL #0] ;elem(Board
+                                                            [row,column]) = Mem
+                                                            ory.Word[Board + (i
+                                                            ndex*4)]
+  238 00000228 E35B0000        CMP              R11,#0      ;R11=0?
+  239 0000022C 1A000001        BNE              makeMove5   ;if not, go to make
+                                                            Move5
+  240 00000230 E7C4600A        STRB             R6,[R4,R10,LSL #0]
+  241 00000234 EA000002        B                makeMoveEnd ;go to makeMoveEnd
+  242 00000238         makeMove5
+  243 00000238 E2488001        SUB              R8,R8,#1    ;R8--
+  244 0000023C E3580000        CMP              R8,#0       ;R8>=0?
+  245 00000240 AAFFFFF5        BGE              makeMove4   ;if so, go to makeM
+                                                            ove4
+  246 00000244         makeMoveEnd
+  247 00000244 E8BD9FF0        POP{R4-R12,PC}
+  248 00000248         
+  249 00000248         ; checkWinning subroutine
+  250 00000248         ; check whether a player win or not
+  251 00000248         ; parameters
+  252 00000248         ;    r0: address of board
+  253 00000248         ; return
+  254 00000248         ;    r0: boolean of this subroutine's result
+  255 00000248         ;         0 - nobody win
+  256 00000248         ;         1 - yellowPlayer wins
+  257 00000248         ;         2 - redPlayer wins
+  258 00000248         checkWinning
+  259 00000248 E92D5FF0        PUSH{R4-R12,LR}
+  260 0000024C E1A04000        MOV              R4,R0       ;R4 = R0 =  address
+                                                             of board
+  261 00000250 E3A08000        MOV              R8,#0       ;R8 = (boolean foun
+                                                            d = false;)
+  262 00000254 E3A05000        MOV              R5,#0       ;R5 = row   =0
+  263 00000258 E3A06000        MOV              R6,#0       ;R6 = column =0 
+  264 0000025C E3A07007        MOV              R7,#7       ;R7 = length =7
+
+
+
+ARM Macro Assembler    Page 7 
+
+
+  265 00000260         checkWinning1
+  266 00000260 E1550007        CMP              R5,R7       ;for(row =0;
+  267 00000264 0A00003E        BEQ              checkingNegResult ;           r
+                                                            ow<length(7);row++)
+                                                            {
+  268 00000268         checkWinning2
+  269 00000268 E1560007        CMP              R6,R7       ;for(column =0;
+  270 0000026C 0A000006        BEQ              checkWinning4 ;              co
+                                                            lumn<length(7);colu
+                                                            mn++){
+  271 00000270 E0090795        MUL              R9,R5,R7    ;index(Board[row]) 
+                                                            = row * length
+  272 00000274 E0899006        ADD              R9,R9,R6    ;index(Board[row][c
+                                                            olumn) = index(Boar
+                                                            d[row]) + column
+  273 00000278 E7D4A009        LDRB             R10,[R4,R9,LSL #0] ;elem(Board[
+                                                            row,column]) = Memo
+                                                            ry.Word[Board + (in
+                                                            dex*4)]
+  274 0000027C E35A0000        CMP              R10,#0      ;elem(Board[row,col
+                                                            umn]) = 0?
+  275 00000280 1A000004        BNE              checkingHorizontal1 ;if not, go
+                                                             to checkingHorizon
+                                                            tal1
+  276 00000284         checkWinningNextNumber
+  277 00000284 E2866001        ADD              R6,R6,#1    ;column++
+  278 00000288 EAFFFFF6        B                checkWinning2 ;}
+  279 0000028C         checkWinning4
+  280 0000028C E2855001        ADD              R5,R5,#1    ;row++
+  281 00000290 E3A06000        MOV              R6,#0       ;column =0
+  282 00000294 EAFFFFF1        B                checkWinning1 ;}
+  283 00000298         
+  284 00000298         
+  285 00000298         checkingHorizontal1
+  286 00000298 E3A09000        MOV              R9,#0       ; R9 = count
+  287 0000029C E3A0B000        MOV              R11,#0      ;R11 = columnIndex
+  288 000002A0         checkHorizontalResetCount
+  289 000002A0 E3A09000        MOV              R9,#0       ; R9 = count
+  290 000002A4         checkinghorizontal2
+  291 000002A4 E3590003        CMP              R9,#3       ;R9 = 3?
+  292 000002A8 0A00002B        BEQ              checkingPosResult ;if so go to 
+                                                            correctHorizontal
+  293 000002AC E00A0795        MUL              R10,R5,R7   ;index(Board[row]) 
+                                                            = row * length
+  294 000002B0 E08AA00B        ADD              R10,R10,R11 ;index(Board[row][c
+                                                            olumn) = index(Boar
+                                                            d[row]) + columnInd
+                                                            ex
+  295 000002B4 E7D4A00A        LDRB             R10,[R4,R10,LSL #0] ;firstElem(
+                                                            Board[row,column]) 
+                                                            = Memory.Word[Board
+                                                             + (index*4)] 
+  296 000002B8 E28BB001        ADD              R11,R11,#1  ;columnIndex++
+  297 000002BC E35B0007        CMP              R11,#7      ;columnIndex = 7?
+  298 000002C0 0A000008        BEQ              checkingVertical1 ;if so, go to
+                                                             checkingVertical1
+  299 000002C4 E00C0795        MUL              R12,R5,R7   ;index(Board[row]) 
+                                                            = row * length
+  300 000002C8 E08CC00B        ADD              R12,R12,R11 ;index(Board[row][c
+
+
+
+ARM Macro Assembler    Page 8 
+
+
+                                                            olumn) = index(Boar
+                                                            d[row]) + columnInd
+                                                            ex
+  301 000002CC E7D4C00C        LDRB             R12,[R4,R12,LSL #0] ;secondElem
+                                                            (Board[row,column])
+                                                             = Memory.Word[Boar
+                                                            d + (index*4)]
+  302 000002D0         
+  303 000002D0 E35A0000        CMP              R10,#0      ;firstElem = 0?
+  304 000002D4 0AFFFFF1        BEQ              checkHorizontalResetCount ;if s
+                                                            o, go to checkingho
+                                                            rizontal2
+  305 000002D8         
+  306 000002D8 E15A000C        CMP              R10,R12     ;firstElem = second
+                                                            Elem ?
+  307 000002DC 1AFFFFEF        BNE              checkHorizontalResetCount
+  308 000002E0 E2899001        ADD              R9,R9,#1    ;count++
+  309 000002E4 EAFFFFEE        B                checkinghorizontal2
+  310 000002E8         checkingVertical1
+  311 000002E8 E3A09000        MOV              R9,#0       ; R9 = count
+  312 000002EC E3A0B000        MOV              R11,#0      ;R11 = rowIndex
+  313 000002F0         checkVerticalResetCount
+  314 000002F0 E3A09000        MOV              R9,#0       ; R9 = count   
+  315 000002F4         checkingVertical2
+  316 000002F4 E3590003        CMP              R9,#3       ;R9 = 3?
+  317 000002F8 0A000017        BEQ              checkingPosResult ;if so go to 
+                                                            correctHorizontal
+  318 000002FC E00A079B        MUL              R10,R11,R7  ;index(Board[row]) 
+                                                            = rowIndex * length
+                                                            
+  319 00000300 E08AA006        ADD              R10,R10,R6  ;index(Board[row][c
+                                                            olumn) = index(Boar
+                                                            d[row]) + column
+  320 00000304 E7D4A00A        LDRB             R10,[R4,R10,LSL #0] ;firstElem(
+                                                            Board[row,column]) 
+                                                            = Memory.Word[Board
+                                                             + (index*4)] 
+  321 00000308 E28BB001        ADD              R11,R11,#1  ;columnIndex++
+  322 0000030C E35B0007        CMP              R11,#7      ;columnIndex = 7?
+  323 00000310 0A000008        BEQ              checkingDiagnal ;if so, go to c
+                                                            heckingDiagnal
+  324 00000314 E00C079B        MUL              R12,R11,R7  ;index(Board[row]) 
+                                                            = rowIndex * length
+                                                            
+  325 00000318 E08CC006        ADD              R12,R12,R6  ;index(Board[row][c
+                                                            olumn) = index(Boar
+                                                            d[row]) + column
+  326 0000031C E7D4C00C        LDRB             R12,[R4,R12,LSL #0] ;secondElem
+                                                            (Board[row,column])
+                                                             = Memory.Word[Boar
+                                                            d + (index*4)]
+  327 00000320 E35A0000        CMP              R10,#0      ;firstElem = 0?
+  328 00000324 0AFFFFF1        BEQ              checkVerticalResetCount ;if so,
+                                                             go to checkingVert
+                                                            ical2
+  329 00000328 E15A000C        CMP              R10,R12     ;firstElem = second
+                                                            Elem ?
+  330 0000032C 1AFFFFEF        BNE              checkVerticalResetCount ;if not
+                                                            , go to checkVertic
+
+
+
+ARM Macro Assembler    Page 9 
+
+
+                                                            alResetCount
+  331 00000330 E2899001        ADD              R9,R9,#1    ;count++
+  332 00000334 EAFFFFEE        B                checkingVertical2
+  333 00000338         checkingDiagnal
+  334 00000338 E1A00004        MOV              R0,R4       ;R0 = R4 = board
+  335 0000033C E1A01005        MOV              R1,R5       ;R1 = R5 = row
+  336 00000340 E1A02006        MOV              R2,R6       ;R2 = R6 = column
+  337 00000344 EB000008        BL               diagnalCheck ;go to diagnalChec
+                                                            k subroutine
+  338 00000348 E3500000        CMP              R0,#0       ;R0 =0?
+  339 0000034C 0A000000        BEQ              preCheckWinningNextNumber ;if s
+                                                            o, go to preCheckWi
+                                                            nningNextNumber
+  340 00000350 1A000004        BNE              checkWinningEnd ;if not, go to 
+                                                            checkWinningEnd
+  341 00000354         preCheckWinningNextNumber
+  342 00000354 E3A09000        MOV              R9,#0       ;R9 =0
+  343 00000358 EAFFFFC9        B                checkWinningNextNumber ; go to 
+                                                            checkWinningNextNum
+                                                            ber
+  344 0000035C         checkingPosResult
+  345 0000035C E1A0000A        MOV              R0,R10      ;R0 = R10
+  346 00000360 EA000000        B                checkWinningEnd ; go to checkWi
+                                                            nningEnd
+  347 00000364         checkingNegResult
+  348 00000364 E3A00000        MOV              R0,#0       ;firstElem(Board[ro
+                                                            w,column]) = Memory
+                                                            .Word[Board + (inde
+                                                            x*4)]LDR R0,LDRB
+  349 00000368         checkWinningEnd
+  350 00000368 E8BD9FF0        POP{R4-R12,PC}
+  351 0000036C         
+  352 0000036C         ; diagnalCheck subroutine
+  353 0000036C         ; check whether a player win or not in diag
+  354 0000036C         ; parameters
+  355 0000036C         ;    r0: address of board
+  356 0000036C         ; return
+  357 0000036C         ;    r0: boolean of this subroutine's result
+  358 0000036C         ;         0 - nobody win
+  359 0000036C         ;         1 - yellowPlayer wins
+  360 0000036C         ;         2 - redPlayer wins
+  361 0000036C         diagnalCheck
+  362 0000036C E92D5FF0        PUSH{R4-R12,LR}
+  363 00000370 E1A04000        MOV              R4,R0       ;R4 = board
+  364 00000374 E3A05000        MOV              R5,#0       ;R5 = row
+  365 00000378 E3A06000        MOV              R6,#0       ;R6 = column
+  366 0000037C E3A07007        MOV              R7,#7       ;R7 = length =7
+  367 00000380 E3A08000        MOV              R8,#0       ;R8 = (boolean foun
+                                                            d = false;)
+  368 00000384 E3A09000        MOV              R9,#0       ;R9 = count
+  369 00000388         diagnalCheck1
+  370 00000388 E3A05000        MOV              R5,#0       ;R5 = row
+  371 0000038C E3A06000        MOV              R6,#0       ;R6 = column
+  372 00000390 E3A09000        MOV              R9,#0       ;R9 = count
+  373 00000394 E1A0B006        MOV              R11,R6      ;R11 =indexcolumn
+  374 00000398         diagnalCheck11
+  375 00000398 E3560004        CMP              R6,#4       ;for(column =0;colu
+                                                            mn<4;
+  376 0000039C 0A000019        BEQ              diagnalCheck12 ;if so, go to di
+
+
+
+ARM Macro Assembler    Page 10 
+
+
+                                                            agnalCheck3Part2
+  377 000003A0         diagnalCheck16
+  378 000003A0 E3550003        CMP              R5,#3       ;for(row =0;row<3;
+  379 000003A4 0A000012        BEQ              diagnalCheck13 ;if so, go to di
+                                                            agnalCheck3Part3
+  380 000003A8 E0080795        MUL              R8,R5,R7    ;index(Board[row]) 
+                                                            = row * length
+  381 000003AC E088800B        ADD              R8,R8,R11   ;index(Board[row][c
+                                                            olumn) = index(Boar
+                                                            d[row]) + column
+  382 000003B0 E7D40008        LDRB             R0,[R4,R8,LSL #0] ;firstElem(Bo
+                                                            ard[row,column]) = 
+                                                            Memory.Word[Board +
+                                                             (index*4)]
+  383 000003B4 E28BB001        ADD              R11,R11,#1  ;secondColumn =colu
+                                                            mn + 1
+  384 000003B8 E285A001        ADD              R10,R5,#1   ;secondRow =row +1
+  385 000003BC         
+  386 000003BC E008079A        MUL              R8,R10,R7   ;index(Board[row]) 
+                                                            = row * length
+  387 000003C0 E088800B        ADD              R8,R8,R11   ;index(Board[row][c
+                                                            olumn) = index(Boar
+                                                            d[row]) + column
+  388 000003C4 E7D41008        LDRB             R1,[R4,R8,LSL #0] ;secondElem(B
+                                                            oard[row,column]) =
+                                                             Memory.Word[Board 
+                                                            + (index*4)]
+  389 000003C8         
+  390 000003C8 E3500000        CMP              R0,#0       ;firstElem = 0?
+  391 000003CC 0A000001        BEQ              diagnalCheck01 ;if so, go to di
+                                                            agnalCheck01
+  392 000003D0         
+  393 000003D0 E1500001        CMP              R0,R1       ;R0(firstElem) = R1
+                                                            (secondElem)?
+  394 000003D4 0A000001        BEQ              diagnalCheck14 ;if so, go to di
+                                                            agnalCheck3Part4
+  395 000003D8         diagnalCheck01
+  396 000003D8 E3A09000        MOV              R9,#0       ;reset count as 0
+  397 000003DC EA000000        B                diagnalCheck15 ;go to diagnalCh
+                                                            eck3Part5
+  398 000003E0         diagnalCheck14
+  399 000003E0 E2899001        ADD              R9,R9,#1    ;count++;
+  400 000003E4         diagnalCheck15
+  401 000003E4 E2855001        ADD              R5,R5,#1    ;row++
+  402 000003E8 E3590003        CMP              R9,#3       ;R9=3?
+  403 000003EC 0A000069        BEQ              diagnalCheckPosResult ;if so, g
+                                                            o to diagnalCheckPo
+                                                            sResult
+  404 000003F0 EAFFFFEA        B                diagnalCheck16 ;go to diagnalCh
+                                                            eck16
+  405 000003F4         diagnalCheck13
+  406 000003F4 E3A05000        MOV              R5,#0       ;R5 = row
+  407 000003F8 E3A09000        MOV              R9,#0       ;R9 = count
+  408 000003FC E2866001        ADD              R6,R6,#1    ;column++
+  409 00000400 E1A0B006        MOV              R11,R6      ;indexcolumn = colu
+                                                            mn
+  410 00000404 EAFFFFE3        B                diagnalCheck11
+  411 00000408         diagnalCheck12
+  412 00000408 EAFFFFFF        B                diagnalCheck2
+
+
+
+ARM Macro Assembler    Page 11 
+
+
+  413 0000040C         
+  414 0000040C         
+  415 0000040C         diagnalCheck2
+  416 0000040C E3A05000        MOV              R5,#0       ;R5 = row
+  417 00000410 E3A06003        MOV              R6,#3       ;R6 = column
+  418 00000414 E3A09000        MOV              R9,#0       ;R9 = count
+  419 00000418 E1A0B006        MOV              R11,R6      ;R11 =indexcolumn
+  420 0000041C         diagnalCheck21
+  421 0000041C E3560007        CMP              R6,#7       ;for(column = 3;col
+                                                            umn<7;
+  422 00000420 0A000019        BEQ              diagnalCheck22 ;if so, go to di
+                                                            agnalCheck3Part2
+  423 00000424         diagnalCheck26
+  424 00000424 E3550003        CMP              R5,#3       ;for(row = 0; row<3
+                                                            ;
+  425 00000428 0A000012        BEQ              diagnalCheck23 ;if so, go to di
+                                                            agnalCheck3Part3
+  426 0000042C E0080795        MUL              R8,R5,R7    ;index(Board[row]) 
+                                                            = row * length
+  427 00000430 E088800B        ADD              R8,R8,R11   ;index(Board[row][c
+                                                            olumn) = index(Boar
+                                                            d[row]) + column
+  428 00000434 E7D40008        LDRB             R0,[R4,R8,LSL #0] ;firstElem(Bo
+                                                            ard[row,column]) = 
+                                                            Memory.Word[Board +
+                                                             (index*4)]
+  429 00000438 E24BB001        SUB              R11,R11,#1  ;secondColumn =colu
+                                                            mn - 1
+  430 0000043C E285A001        ADD              R10,R5,#1   ;secondRow =row +1
+  431 00000440 E008079A        MUL              R8,R10,R7   ;index(Board[row]) 
+                                                            = row * length
+  432 00000444 E088800B        ADD              R8,R8,R11   ;index(Board[row][c
+                                                            olumn) = index(Boar
+                                                            d[row]) + column
+  433 00000448 E7D41008        LDRB             R1,[R4,R8,LSL #0] ;secondElem(B
+                                                            oard[row,column]) =
+                                                             Memory.Word[Board 
+                                                            + (index*4)]
+  434 0000044C E3500000        CMP              R0,#0       ;firstElem = 0?
+  435 00000450 0A000001        BEQ              diagnalCheck02 ;if so, go to di
+                                                            agnalCheck02
+  436 00000454 E1500001        CMP              R0,R1       ;R0(firstElem) = R1
+                                                            (secondElem)?
+  437 00000458 0A000001        BEQ              diagnalCheck24 ;if so, go to di
+                                                            agnalCheck3Part4
+  438 0000045C         diagnalCheck02
+  439 0000045C E3A09000        MOV              R9,#0       ;reset count as 0
+  440 00000460 EA000000        B                diagnalCheck25 ;go to diagnalCh
+                                                            eck3Part5
+  441 00000464         diagnalCheck24
+  442 00000464 E2899001        ADD              R9,R9,#1    ;count++;
+  443 00000468         diagnalCheck25
+  444 00000468 E2855001        ADD              R5,R5,#1    ;row++
+  445 0000046C E3590003        CMP              R9,#3
+  446 00000470 0A000048        BEQ              diagnalCheckPosResult
+  447 00000474 EAFFFFEA        B                diagnalCheck26
+  448 00000478         diagnalCheck23
+  449 00000478 E3A05000        MOV              R5,#0       ;R5 = row
+  450 0000047C E3A09000        MOV              R9,#0       ;R9 = count
+
+
+
+ARM Macro Assembler    Page 12 
+
+
+  451 00000480 E2866001        ADD              R6,R6,#1    ;column++
+  452 00000484 E1A0B006        MOV              R11,R6      ;indexcolumn = colu
+                                                            mn
+  453 00000488 EAFFFFE3        B                diagnalCheck21
+  454 0000048C         diagnalCheck22
+  455 0000048C EAFFFFFF        B                diagnalCheck3
+  456 00000490         
+  457 00000490         
+  458 00000490         diagnalCheck3
+  459 00000490 E3A05006        MOV              R5,#6       ;R5 = row
+  460 00000494 E3A06000        MOV              R6,#0       ;R6 = column
+  461 00000498 E3A09000        MOV              R9,#0       ;R9 = count
+  462 0000049C E1A0B006        MOV              R11,R6      ;R11 =indexcolumn
+  463 000004A0         diagnalCheck31
+  464 000004A0 E3560004        CMP              R6,#4       ;for(column = 0;col
+                                                            umn<4;
+  465 000004A4 0A000019        BEQ              diagnalCheck32 ;if so, go to di
+                                                            agnalCheck3Part2
+  466 000004A8         diagnalCheck36
+  467 000004A8 E3550003        CMP              R5,#3       ;for(row=6;3<row;
+  468 000004AC 0A000012        BEQ              diagnalCheck33 ;if so, go to di
+                                                            agnalCheck3Part3
+  469 000004B0 E0080795        MUL              R8,R5,R7    ;index(Board[row]) 
+                                                            = row * length
+  470 000004B4 E088800B        ADD              R8,R8,R11   ;index(Board[row][c
+                                                            olumn) = index(Boar
+                                                            d[row]) + column
+  471 000004B8 E7D40008        LDRB             R0,[R4,R8,LSL #0] ;firstElem(Bo
+                                                            ard[row,column]) = 
+                                                            Memory.Word[Board +
+                                                             (index*4)]
+  472 000004BC E28BB001        ADD              R11,R11,#1  ;secondColumn =colu
+                                                            mn + 1
+  473 000004C0 E245A001        SUB              R10,R5,#1   ;secondRow =row -1
+  474 000004C4         
+  475 000004C4 E008079A        MUL              R8,R10,R7   ;index(Board[row]) 
+                                                            = row * length
+  476 000004C8 E088800B        ADD              R8,R8,R11   ;index(Board[row][c
+                                                            olumn) = index(Boar
+                                                            d[row]) + column
+  477 000004CC E7D41008        LDRB             R1,[R4,R8,LSL #0] ;secondElem(B
+                                                            oard[row,column]) =
+                                                             Memory.Word[Board 
+                                                            + (index*4)]
+  478 000004D0 E3500000        CMP              R0,#0       ;firstElem = 0?
+  479 000004D4 0A000001        BEQ              diagnalCheck03 ;if so, go to di
+                                                            agnalCheck03
+  480 000004D8 E1500001        CMP              R0,R1       ;R0(firstElem) = R1
+                                                            (secondElem)?
+  481 000004DC 0A000001        BEQ              diagnalCheck34 ;if so, go to di
+                                                            agnalCheck3Part4
+  482 000004E0         diagnalCheck03
+  483 000004E0 E3A09000        MOV              R9,#0       ;reset count as 0
+  484 000004E4 EA000000        B                diagnalCheck35 ;go to diagnalCh
+                                                            eck3Part5
+  485 000004E8         diagnalCheck34
+  486 000004E8 E2899001        ADD              R9,R9,#1    ;count++;
+  487 000004EC         diagnalCheck35
+  488 000004EC E2455001        SUB              R5,R5,#1    ;row--
+
+
+
+ARM Macro Assembler    Page 13 
+
+
+  489 000004F0 E3590003        CMP              R9,#3
+  490 000004F4 0A000027        BEQ              diagnalCheckPosResult
+  491 000004F8 EAFFFFEA        B                diagnalCheck36
+  492 000004FC         diagnalCheck33
+  493 000004FC E3A05006        MOV              R5,#6       ;R5 = row
+  494 00000500 E3A09000        MOV              R9,#0       ;R9 = count
+  495 00000504 E2866001        ADD              R6,R6,#1    ;column++
+  496 00000508 E1A0B006        MOV              R11,R6      ;indexcolumn = colu
+                                                            mn
+  497 0000050C EAFFFFE3        B                diagnalCheck31
+  498 00000510         diagnalCheck32
+  499 00000510 EAFFFFFF        B                diagnalCheck4
+  500 00000514         
+  501 00000514         
+  502 00000514         diagnalCheck4
+  503 00000514 E3A05006        MOV              R5,#6       ;R5 = row
+  504 00000518 E3A06003        MOV              R6,#3       ;R6 = column
+  505 0000051C E3A09000        MOV              R9,#0       ;R9 = count
+  506 00000520 E1A0B006        MOV              R11,R6      ;R11 = R6 =  indexc
+                                                            olumn
+  507 00000524         diagnalCheck41
+  508 00000524 E3560007        CMP              R6,#7       ;for(column=3;colum
+                                                            n<7;
+  509 00000528 0A000019        BEQ              diagnalCheck42 ;if so, go to di
+                                                            agnalCheck4.2
+  510 0000052C         diagnalCheck46
+  511 0000052C E3550003        CMP              R5,#3       ;for(row=6;3<row;
+  512 00000530 0A000012        BEQ              diagnalCheck43 ;if so, go to di
+                                                            agnalCheck4.3
+  513 00000534 E0080795        MUL              R8,R5,R7    ;index(Board[row]) 
+                                                            = row * length
+  514 00000538 E088800B        ADD              R8,R8,R11   ;index(Board[row][c
+                                                            olumn) = index(Boar
+                                                            d[row]) + column
+  515 0000053C E7D40008        LDRB             R0,[R4,R8,LSL #0] ;firstElem(Bo
+                                                            ard[row,column]) = 
+                                                            Memory.Word[Board +
+                                                             (index*4)]
+  516 00000540 E24BB001        SUB              R11,R11,#1  ;secondColumn =colu
+                                                            mn - 1
+  517 00000544 E245A001        SUB              R10,R5,#1   ;secondRow =row -1=
+                                                            
+  518 00000548 E008079A        MUL              R8,R10,R7   ;index(Board[row]) 
+                                                            = row * length
+  519 0000054C E088800B        ADD              R8,R8,R11   ;index(Board[row][c
+                                                            olumn) = index(Boar
+                                                            d[row]) + column
+  520 00000550 E7D41008        LDRB             R1,[R4,R8,LSL #0] ;secondElem(B
+                                                            oard[row,column]) =
+                                                             Memory.Word[Board 
+                                                            + (index*4)]
+  521 00000554 E3500000        CMP              R0,#0       ;firstElem = 0?
+  522 00000558 0A000001        BEQ              diagnalCheck04 ;if so, go to di
+                                                            agnalCheck04
+  523 0000055C E1500001        CMP              R0,R1       ;R0(firstElem) = R1
+                                                            (secondElem)?
+  524 00000560 0A000001        BEQ              diagnalCheck44 ;if so, go to di
+                                                            agnalCheck4.4
+  525 00000564         diagnalCheck04
+
+
+
+ARM Macro Assembler    Page 14 
+
+
+  526 00000564 E3A09000        MOV              R9,#0       ;reset count as 0
+  527 00000568 EA000000        B                diagnalCheck45 ;go to diagnalCh
+                                                            eck4.5
+  528 0000056C         diagnalCheck44
+  529 0000056C E2899001        ADD              R9,R9,#1    ;count++;
+  530 00000570         diagnalCheck45
+  531 00000570 E2455001        SUB              R5,R5,#1    ;row--
+  532 00000574 E3590003        CMP              R9,#3
+  533 00000578 0A000006        BEQ              diagnalCheckPosResult
+  534 0000057C EAFFFFEA        B                diagnalCheck46
+  535 00000580         diagnalCheck43
+  536 00000580 E3A05006        MOV              R5,#6       ;R5 = row
+  537 00000584 E3A09000        MOV              R9,#0       ;R9 = count
+  538 00000588 E2866001        ADD              R6,R6,#1    ;column++
+  539 0000058C E1A0B006        MOV              R11,R6      ;indexColumn = colu
+                                                            mn
+  540 00000590 EAFFFFE3        B                diagnalCheck41
+  541 00000594         diagnalCheck42
+  542 00000594 EA000001        B                diagnalCheckNegaticeResult
+  543 00000598         
+  544 00000598         diagnalCheckPosResult
+  545 00000598 E1A00001        MOV              R0,R1       ;firstElem(Board[ro
+                                                            w,column]) = Memory
+                                                            .Word[Board + (inde
+                                                            x*4)]LDR R0,LDRB
+  546 0000059C EA000000        B                diagnalCheckEnd
+  547 000005A0         diagnalCheckNegaticeResult
+  548 000005A0 E3A00000        MOV              R0,#0
+  549 000005A4         diagnalCheckEnd
+  550 000005A4 E8BD9FF0        POP{R4-R12,PC}
+  551 000005A8         
+  552 000005A8         
+  553 000005A8         ; computerMove subroutine
+  554 000005A8         ; determine which position computer makes move
+  555 000005A8         ; parameters
+  556 000005A8         ;    r0: address of board
+  557 000005A8         ;    r1: last move computer made
+  558 000005A8         ; return
+  559 000005A8         ;    r0: the number of column computer chose
+  560 000005A8         
+  561 000005A8         computerMove
+  562 000005A8 E92D5FF0        PUSH{R4-R12,LR}
+  563 000005AC E1A04000        MOV              R4,R0       ;R4 = the address o
+                                                            f board
+  564 000005B0 E3A08000        MOV              R8,#0       ;R8 = (boolean foun
+                                                            d = false;)
+  565 000005B4 E3A05000        MOV              R5,#0       ;R5 = row   =0
+  566 000005B8 E3A06000        MOV              R6,#0       ;R6 = column =0 
+  567 000005BC E3A07007        MOV              R7,#7       ;R7 = length =7
+  568 000005C0         computerMove1
+  569 000005C0 E1550007        CMP              R5,R7       ;for(row =0;
+  570 000005C4 0A000059        BEQ              computerMoveNegResult ;        
+                                                               row<length(7);ro
+                                                            w++){
+  571 000005C8         computerMove2
+  572 000005C8 E1560007        CMP              R6,R7       ;for(column =0;
+  573 000005CC 0A000006        BEQ              computerMove4 ;              co
+                                                            lumn<length(7);colu
+                                                            mn++){
+
+
+
+ARM Macro Assembler    Page 15 
+
+
+  574 000005D0 E0090795        MUL              R9,R5,R7    ;index(Board[row]) 
+                                                            = row * length
+  575 000005D4 E0899006        ADD              R9,R9,R6    ;index(Board[row][c
+                                                            olumn) = index(Boar
+                                                            d[row]) + column
+  576 000005D8 E7D4A009        LDRB             R10,[R4,R9,LSL #0] ;elem(Board[
+                                                            row,column]) = Memo
+                                                            ry.Word[Board + (in
+                                                            dex*4)]
+  577 000005DC E35A0000        CMP              R10,#0      ;elem(Board[row,col
+                                                            umn]) = 0?
+  578 000005E0 1A000004        BNE              computerMoveCheckHorizontal1 ;i
+                                                            f not, go to comput
+                                                            erMoveCheckHorizont
+                                                            al1
+  579 000005E4         computerMoveNextNumber
+  580 000005E4 E2866001        ADD              R6,R6,#1    ;column++
+  581 000005E8 EAFFFFF6        B                computerMove2 ;}
+  582 000005EC         computerMove4
+  583 000005EC E2855001        ADD              R5,R5,#1    ;row++
+  584 000005F0 E3A06000        MOV              R6,#0       ;column =0
+  585 000005F4 EAFFFFF1        B                computerMove1 ;} 
+  586 000005F8         
+  587 000005F8         
+  588 000005F8         computerMoveCheckHorizontal1
+  589 000005F8 E3A02000        MOV              R2,#0       ;R2 = startingNot0
+  590 000005FC E3A09000        MOV              R9,#0       ; R9 = count
+  591 00000600 E3A0B000        MOV              R11,#0      ;R11 = columnIndex
+  592 00000604         computerMoveCheckHorizontalResetCount
+  593 00000604 E3A09000        MOV              R9,#0       ; R9 = count
+  594 00000608 E3A02000        MOV              R2,#0
+  595 0000060C         computerMoveCheckinghorizontal2
+  596 0000060C E3590002        CMP              R9,#2       ;R9 = 2?
+  597 00000610 0A00000F        BEQ              computerMovePosHorizontalResult
+ 
+                                                            ;if so go to comput
+                                                            erMovePosHorizontal
+                                                            Result
+  598 00000614 E00A0795        MUL              R10,R5,R7   ;index(Board[row]) 
+                                                            = row * length
+  599 00000618 E08AA00B        ADD              R10,R10,R11 ;index(Board[row][c
+                                                            olumn) = index(Boar
+                                                            d[row]) + columnInd
+                                                            ex
+  600 0000061C E7D4A00A        LDRB             R10,[R4,R10,LSL #0] ;firstElem(
+                                                            Board[row,column]) 
+                                                            = Memory.Word[Board
+                                                             + (index*4)] 
+  601 00000620 E28BB001        ADD              R11,R11,#1  ;columnIndex++
+  602 00000624 E35B0007        CMP              R11,#7      ;columnIndex = 7?
+  603 00000628 0A00001C        BEQ              computerMoveCheckingVertical1 ;
+                                                            if so, go to comput
+                                                            erMoveCheckingVerti
+                                                            cal1
+  604 0000062C E00C0795        MUL              R12,R5,R7   ;index(Board[row]) 
+                                                            = row * length
+  605 00000630 E08CC00B        ADD              R12,R12,R11 ;index(Board[row][c
+                                                            olumn) = index(Boar
+                                                            d[row]) + columnInd
+
+
+
+ARM Macro Assembler    Page 16 
+
+
+                                                            ex
+  606 00000634 E7D4C00C        LDRB             R12,[R4,R12,LSL #0] ;secondElem
+                                                            (Board[row,column])
+                                                             = Memory.Word[Boar
+                                                            d + (index*4)]
+  607 00000638         
+  608 00000638 E35A0000        CMP              R10,#0      ;firstElem = 0?
+  609 0000063C 0AFFFFF0        BEQ              computerMoveCheckHorizontalRese
+tCount 
+                                                            ;if so, go to compu
+                                                            terMoveCheckHorizon
+                                                            talResetCount
+  610 00000640         
+  611 00000640 E15A000C        CMP              R10,R12     ;firstElem = second
+                                                            Elem ?
+  612 00000644 1AFFFFEE        BNE              computerMoveCheckHorizontalRese
+tCount
+  613 00000648 E2899001        ADD              R9,R9,#1    ;count++
+  614 0000064C E24B2001        SUB              R2,R11,#1   ;startingNot0 = col
+                                                            umnIndex - 1
+  615 00000650 EAFFFFED        B                computerMoveCheckinghorizontal2
+  616 00000654         
+  617 00000654         computerMovePosHorizontalResult
+  618 00000654 E28BB001        ADD              R11,R11,#1  ;columnIndex++
+  619 00000658 E35B0007        CMP              R11,#7      ;R11 =7? 
+  620 0000065C 0A000006        BEQ              computerMovePosHorizontalResult
+2 
+                                                            ;if so , go to comp
+                                                            uterMovePosHorizont
+                                                            alResult2
+  621 00000660 E00A0795        MUL              R10,R5,R7   ;index(Board[row]) 
+                                                            = row * length
+  622 00000664 E08AA00B        ADD              R10,R10,R11 ;index(Board[row][c
+                                                            olumn) = index(Boar
+                                                            d[row]) + columnInd
+                                                            ex
+  623 00000668 E7D4A00A        LDRB             R10,[R4,R10,LSL #0] ;firstElem(
+                                                            Board[row,column]) 
+                                                            = Memory.Word[Board
+                                                             + (index*4)] 
+  624 0000066C E35A0000        CMP              R10,#0
+  625 00000670 1A000001        BNE              computerMovePosHorizontalResult
+2
+  626 00000674 E1A0000B        MOV              R0,R11      ;returnColumnNumber
+                                                             = columnIndex
+  627 00000678 EA00003D        B                computerMoveEnd
+  628 0000067C         computerMovePosHorizontalResult2
+  629 0000067C E3520000        CMP              R2,#0
+  630 00000680 BA000006        BLT              computerMoveCheckingVertical1
+  631 00000684 E00A0795        MUL              R10,R5,R7   ;index(Board[row]) 
+                                                            = row * length
+  632 00000688 E08AA002        ADD              R10,R10,R2  ;index(Board[row][c
+                                                            olumn) = index(Boar
+                                                            d[row]) + columnInd
+                                                            ex
+  633 0000068C E7D4A00A        LDRB             R10,[R4,R10,LSL #0] ;firstElem(
+                                                            Board[row,column]) 
+                                                            = Memory.Word[Board
+                                                             + (index*4)] 
+
+
+
+ARM Macro Assembler    Page 17 
+
+
+  634 00000690 E35A0000        CMP              R10,#0
+  635 00000694 1A000001        BNE              computerMoveCheckingVertical1
+  636 00000698 E1A00002        MOV              R0,R2       ;returnColumnNumber
+                                                             = startingNot0
+  637 0000069C EA000034        B                computerMoveEnd
+  638 000006A0         
+  639 000006A0         computerMoveCheckingVertical1
+  640 000006A0 E3A02000        MOV              R2,#0       ;R2 = startingNot0
+  641 000006A4 E3A09000        MOV              R9,#0       ; R9 = count
+  642 000006A8 E3A0B000        MOV              R11,#0      ;R11 = rowIndex
+  643 000006AC         computerMoveCheckVerticalResetCount
+  644 000006AC E3A09000        MOV              R9,#0       ; R9 = count   
+  645 000006B0 E3A02000        MOV              R2,#0
+  646 000006B4         computerMoveCheckingVertical2
+  647 000006B4 E3590002        CMP              R9,#2       ;R9 = 2?
+  648 000006B8 0A00000F        BEQ              computerMovePosVertical1Result 
+                                                            ;if so go to comput
+                                                            erMovePosVertical1R
+                                                            esult
+  649 000006BC E00A079B        MUL              R10,R11,R7  ;index(Board[row]) 
+                                                            = rowIndex * length
+                                                            
+  650 000006C0 E08AA006        ADD              R10,R10,R6  ;index(Board[row][c
+                                                            olumn) = index(Boar
+                                                            d[row]) + column
+  651 000006C4 E7D4A00A        LDRB             R10,[R4,R10,LSL #0] ;firstElem(
+                                                            Board[row,column]) 
+                                                            = Memory.Word[Board
+                                                             + (index*4)] 
+  652 000006C8 E28BB001        ADD              R11,R11,#1  ;columnIndex++
+  653 000006CC E35B0007        CMP              R11,#7      ;columnIndex = 7?
+  654 000006D0 0A000012        BEQ              preComputerMoveNextNumber ;if s
+                                                            o, go to checkingDi
+                                                            agnal
+  655 000006D4 E00C079B        MUL              R12,R11,R7  ;index(Board[row]) 
+                                                            = rowIndex * length
+                                                            
+  656 000006D8 E08CC006        ADD              R12,R12,R6  ;index(Board[row][c
+                                                            olumn) = index(Boar
+                                                            d[row]) + column
+  657 000006DC E7D4C00C        LDRB             R12,[R4,R12,LSL #0] ;secondElem
+                                                            (Board[row,column])
+                                                             = Memory.Word[Boar
+                                                            d + (index*4)]
+  658 000006E0         
+  659 000006E0 E35A0000        CMP              R10,#0      ;firstElem = 0?
+  660 000006E4 0AFFFFF0        BEQ              computerMoveCheckVerticalResetC
+ount 
+                                                            ;if so, go to check
+                                                            ingVertical2
+  661 000006E8         
+  662 000006E8         
+  663 000006E8 E15A000C        CMP              R10,R12     ;firstElem = second
+                                                            Elem ?
+  664 000006EC 1AFFFFEE        BNE              computerMoveCheckVerticalResetC
+ount
+  665 000006F0 E2899001        ADD              R9,R9,#1    ;count++
+  666 000006F4 E24B2001        SUB              R2,R11,#1   ;startingNot0 = row
+                                                            Index - 1
+
+
+
+ARM Macro Assembler    Page 18 
+
+
+  667 000006F8 EAFFFFED        B                computerMoveCheckingVertical2
+  668 000006FC         
+  669 000006FC         computerMovePosVertical1Result
+  670 000006FC         computerMovePosVertical1Result2
+  671 000006FC E3520000        CMP              R2,#0
+  672 00000700 BA000006        BLT              preComputerMoveNextNumber
+  673 00000704 E00A0795        MUL              R10,R5,R7   ;index(Board[row]) 
+                                                            = row * length
+  674 00000708 E08AA002        ADD              R10,R10,R2  ;index(Board[row][c
+                                                            olumn) = index(Boar
+                                                            d[row]) + columnInd
+                                                            ex
+  675 0000070C E7D4A00A        LDRB             R10,[R4,R10,LSL #0] ;firstElem(
+                                                            Board[row,column]) 
+                                                            = Memory.Word[Board
+                                                             + (index*4)] 
+  676 00000710 E35A0000        CMP              R10,#0
+  677 00000714 1A000001        BNE              preComputerMoveNextNumber
+  678 00000718 E1A00002        MOV              R0,R2       ;returnColumnNumber
+                                                             = startingNot0
+  679 0000071C EA000014        B                computerMoveEnd
+  680 00000720         
+  681 00000720         ;computerMoveCheckingDiagnal  
+  682 00000720         ;   MOV R0,R4                        ;R0 = R4 = board
+  683 00000720         ;   BL  computerMoveNegResult2       ;
+  684 00000720         ;   CMP R0,#9
+  685 00000720         ;   BEQ preComputerMoveNextNumber
+  686 00000720         ;   BNE computerMoveEnd
+  687 00000720         
+  688 00000720         
+  689 00000720         preComputerMoveNextNumber
+  690 00000720 E3A09000        MOV              R9,#0
+  691 00000724 EAFFFFAE        B                computerMoveNextNumber
+  692 00000728         computerMoveFixFirstNumber
+  693 00000728 E3E01000        MOV              R1,#-1
+  694 0000072C EA000002        B                computerMoveNegResult5
+  695 00000730         
+  696 00000730         computerMoveNegResult
+  697 00000730 E3A05000        MOV              R5,#0       ;R5 = row   =0
+  698 00000734 E3510009        CMP              R1,#9       ;R1 =9?
+  699 00000738 0AFFFFFA        BEQ              computerMoveFixFirstNumber
+  700 0000073C         computerMoveNegResult5
+  701 0000073C E3510006        CMP              R1,#6       ;R1 =6?
+  702 00000740 1A000000        BNE              computerMoveNegResult4 ;if so, 
+                                                            go to computerMoveN
+                                                            egResult4
+  703 00000744 E3E01000        MOV              R1,#-1      ;R1 =0
+  704 00000748         computerMoveNegResult4
+  705 00000748 E2816001        ADD              R6,R1,#1    ;R6 = column =R1
+  706 0000074C E3A07007        MOV              R7,#7       ;R7 = length =7
+  707 00000750         computerMoveNegResult2
+  708 00000750 E00A0795        MUL              R10,R5,R7   ;index(Board[row]) 
+                                                            = row * length
+  709 00000754 E08AA006        ADD              R10,R10,R6  ;index(Board[row][c
+                                                            olumn) = index(Boar
+                                                            d[row]) + column
+  710 00000758 E7D4A00A        LDRB             R10,[R4,R10,LSL #0] ;firstElem(
+                                                            Board[row,column]) 
+                                                            = Memory.Word[Board
+
+
+
+ARM Macro Assembler    Page 19 
+
+
+                                                             + (index*4)] 
+  711 0000075C E35A0000        CMP              R10,#0      ;R10 =0?
+  712 00000760 1A000001        BNE              computerMoveNegResult3 ;if not,
+                                                             go to computerMove
+                                                            NegResult3
+  713 00000764 E1A00006        MOV              R0,R6       ;R0 = R6
+  714 00000768 EA000001        B                computerMoveEnd ;go to computer
+                                                            MoveEnd
+  715 0000076C         computerMoveNegResult3
+  716 0000076C E2866001        ADD              R6,R6,#1    ;R6++
+  717 00000770 EAFFFFF6        B                computerMoveNegResult2 ;go to c
+                                                            omputerMoveNegResul
+                                                            t2
+  718 00000774         computerMoveEnd
+  719 00000774 E8BD9FF0        POP{R4-R12,PC}
+  720 00000778         
+  721 00000778         
+  722 00000778         
+  723 00000778         ; diagnalCheck subroutine
+  724 00000778         ; check whether a player win or not in diag
+  725 00000778         ; parameters
+  726 00000778         ;    r0: address of board
+  727 00000778         ; return
+  728 00000778         ;    r0: if there is a position where computer can make 
+                       move to win easily, if not return #9
+  729 00000778         
+  730 00000778         ;supplemental   
+  731 00000778         ;computerMoveDiagnalCheck
+  732 00000778         ;  PUSH{R4-R12,LR}
+  733 00000778         ;  MOV R4,R0                         ;R4 = board
+  734 00000778         ;  MOV R5,#0                         ;R5 = row
+  735 00000778         ;  MOV R6,#0                         ;R6 = column
+  736 00000778         ;  MOV R7,#7                         ;R7 = length =7
+  737 00000778         ;  MOV R9,#0                         ;R9 = count
+  738 00000778         ;computerMoveDiagnalCheck1   
+  739 00000778         ;   MOV R5,#0                         ;R5 = row
+  740 00000778         ;   MOV R6,#0                         ;R6 = column
+  741 00000778         ;   MOV R9,#0                         ;R9 = count
+  742 00000778         ;   MOV R11,R6                        ;R11 =indexcolumn
+  743 00000778         ;   MOV R2,#0                         ;R2 = startingNot0
+                       Row
+  744 00000778         ;   MOV R3,#0                         ;R3 = startingNot0
+                       Column
+  745 00000778         ;computerMoveDiagnalCheck11
+  746 00000778         ;   CMP R6,#4                         ;for(column =0;col
+                       umn<4;
+  747 00000778         ;   BEQ computerMoveDiagnalCheck12                ;if so
+                       , go to diagnalCheck3Part2
+  748 00000778         ;computerMoveDiagnalCheck16   
+  749 00000778         ;   CMP R5,#3                         ;for(row =0;row<3;
+                       
+  750 00000778         ;   BEQ computerMoveDiagnalCheck13                ;if so
+                       , go to diagnalCheck3Part3
+  751 00000778         ;   MUL R8,R5,R7                      ;index(Board[row])
+                        = row * length
+  752 00000778         ;   ADD R8,R8,R11                     ;index(Board[row][
+                       column) = index(Board[row]) + column
+  753 00000778         ;   LDRB R0,[R4,R8,LSL #0]            ;firstElem(Board[r
+                       ow,column]) = Memory.Word[Board + (index*4)]
+
+
+
+ARM Macro Assembler    Page 20 
+
+
+  754 00000778         ;   ADD R11,R11,#1                    ;secondColumn =col
+                       umn + 1
+  755 00000778         ;   ADD R10,R5,#1                     ;secondRow =row +1
+                       
+  756 00000778         
+  757 00000778         ;   MUL R8,R10,R7                     ;index(Board[row])
+                        = row * length
+  758 00000778         ;   ADD R8,R8,R11                     ;index(Board[row][
+                       column) = index(Board[row]) + column
+  759 00000778         ;  LDRB R1,[R4,R8,LSL #0]            ;secondElem(Board[r
+                       ow,column]) = Memory.Word[Board + (index*4)]
+  760 00000778         
+  761 00000778         ;   CMP R0,#0                         ;firstElem = 0?
+  762 00000778         ;   BEQ computerMoveDiagnalCheck01                ;if so
+                       , go to diagnalCheck01
+  763 00000778         
+  764 00000778         ;   CMP R0,R1                         ;R0(firstElem) = R
+                       1(secondElem)?
+  765 00000778         ;   BEQ computerMoveDiagnalCheck14                ;if so
+                       , go to diagnalCheck3Part4
+  766 00000778         ;computerMoveDiagnalCheck01   
+  767 00000778         ;   MOV R9,#0                         ;reset count as 0
+  768 00000778         ;   B computerMoveDiagnalCheck15                  ;go to
+                        diagnalCheck3Part5
+  769 00000778         ;computerMoveDiagnalCheck14
+  770 00000778         ;   ADD R9,R9,#1                      ;count++
+  771 00000778         ;   MOV R2,R5                         ;startingNot0Row =
+                        row
+  772 00000778         ;   SUB R3,
+  773 00000778         ;computerMoveDiagnalCheck15
+  774 00000778         ;   ADD R5,R5,#1                      ;row++
+  775 00000778         ;   CMP R9,#3
+  776 00000778         ;   BEQ computerMoveDiagnalCheckPosResult   
+  777 00000778         ;   B   computerMoveDiagnalCheck16
+  778 00000778         ;computerMoveDiagnalCheck13
+  779 00000778         ;   MOV R5,#0                         ;R5 = row
+  780 00000778         ;   MOV R9,#0                         ;R9 = count
+  781 00000778         ;   ADD R6,R6,#1                      ;column++
+  782 00000778         ;   MOV R11,R6                        ;indexcolumn = col
+                       umn
+  783 00000778         ;   B   computerMoveDiagnalCheck11
+  784 00000778         ;computerMoveDiagnalCheck12  
+  785 00000778         ;   B   computerMoveDiagnalCheck2
+  786 00000778         
+  787 00000778         
+  788 00000778         ;computerMoveDiagnalCheck2   
+  789 00000778         ;   MOV R5,#0                         ;R5 = row
+  790 00000778         ;   MOV R6,#3                         ;R6 = column
+  791 00000778         ;   MOV R9,#0                         ;R9 = count
+  792 00000778         ;   MOV R11,R6                        ;R11 =indexcolumn
+  793 00000778         ;computerMoveDiagnalCheck21
+  794 00000778         ;   CMP R6,#7                         ;for(column = 3;co
+                       lumn<7;
+  795 00000778         ;   BEQ computerMoveDiagnalCheck22                ;if so
+                       , go to diagnalCheck3Part2
+  796 00000778         ;computerMoveDiagnalCheck26   
+  797 00000778         ;   CMP R5,#3                         ;for(row = 0; row<
+                       3;
+  798 00000778         ;   BEQ computerMoveDiagnalCheck23                ;if so
+
+
+
+ARM Macro Assembler    Page 21 
+
+
+                       , go to diagnalCheck3Part3
+  799 00000778         ;   MUL R8,R5,R7                      ;index(Board[row])
+                        = row * length
+  800 00000778         ;   ADD R8,R8,R11                     ;index(Board[row][
+                       column) = index(Board[row]) + column
+  801 00000778         ;   LDRB R0,[R4,R8,LSL #0]            ;firstElem(Board[r
+                       ow,column]) = Memory.Word[Board + (index*4)]
+  802 00000778         ;   
+  803 00000778         ;   SUB R11,R11,#1                    ;secondColumn =col
+                       umn - 1
+  804 00000778         ;   ADD R10,R5,#1                     ;secondRow =row +1
+                       
+  805 00000778         ;   
+  806 00000778         ;   MUL R8,R10,R7                     ;index(Board[row])
+                        = row * length
+  807 00000778         ;   ADD R8,R8,R11                     ;index(Board[row][
+                       column) = index(Board[row]) + column
+  808 00000778         ;   LDRB R1,[R4,R8,LSL #0]            ;secondElem(Board[
+                       row,column]) = Memory.Word[Board + (index*4)]
+  809 00000778         ;  
+  810 00000778         ;   CMP R0,#0                         ;firstElem = 0?
+  811 00000778         ;   BEQ computerMoveDiagnalCheck02                ;if so
+                       , go to diagnalCheck02
+  812 00000778         ;  
+  813 00000778         ;   CMP R0,R1                         ;R0(firstElem) = R
+                       1(secondElem)?
+  814 00000778         ;;   BEQ computerMoveDiagnalCheck24                ;if s
+                       o, go to diagnalCheck3Part4
+  815 00000778         ;computerMoveDiagnalCheck02   
+  816 00000778         ;   MOV R9,#0                         ;reset count as 0
+  817 00000778         ;   B computerMoveDiagnalCheck25                  ;go to
+                        diagnalCheck3Part5
+  818 00000778         ;computerMoveDiagnalCheck24
+  819 00000778         ;   ADD R9,R9,#1                      ;count++;
+  820 00000778         ;computerMoveDiagnalCheck25
+  821 00000778         ;   ADD R5,R5,#1                      ;row++
+  822 00000778         ;   CMP R9,#3
+  823 00000778         ;   BEQ computerMoveDiagnalCheckPosResult  
+  824 00000778         ;  B   computerMoveDiagnalCheck26
+  825 00000778         ;computerMoveDiagnalCheck23
+  826 00000778         ;   MOV R5,#0                         ;R5 = row
+  827 00000778         ;   MOV R9,#0                         ;R9 = count
+  828 00000778         ;   ADD R6,R6,#1                      ;column++
+  829 00000778         ;   MOV R11,R6                        ;indexcolumn = col
+                       umn
+  830 00000778         ;  B   computerMoveDiagnalCheck21
+  831 00000778         ;computerMoveDiagnalCheck22  
+  832 00000778         ;   B   computerMoveDiagnalCheck3
+  833 00000778         
+  834 00000778         
+  835 00000778         ;computerMoveDiagnalCheck3   
+  836 00000778         ;   MOV R5,#6                         ;R5 = row
+  837 00000778         ;   MOV R6,#0                         ;R6 = column
+  838 00000778         ;   MOV R9,#0                         ;R9 = count
+  839 00000778         ;   MOV R11,R6                        ;R11 =indexcolumn
+  840 00000778         ;computerMoveDiagnalCheck31
+  841 00000778         ;   CMP R6,#4                         ;for(column = 0;co
+                       lumn<4;
+  842 00000778         ;   BEQ computerMoveDiagnalCheck32                ;if so
+
+
+
+ARM Macro Assembler    Page 22 
+
+
+                       , go to diagnalCheck3Part2
+  843 00000778         ;computerMoveDiagnalCheck36   
+  844 00000778         ;   CMP R5,#3                         ;for(row=6;3<row;
+  845 00000778         ;   BEQ computerMoveDiagnalCheck33                ;if so
+                       , go to diagnalCheck3Part3
+  846 00000778         ;   MUL R8,R5,R7                      ;index(Board[row])
+                        = row * length
+  847 00000778         ;   ADD R8,R8,R11                     ;index(Board[row][
+                       column) = index(Board[row]) + column
+  848 00000778         ;   LDRB R0,[R4,R8,LSL #0]            ;firstElem(Board[r
+                       ow,column]) = Memory.Word[Board + (index*4)]
+  849 00000778         ;   ADD R11,R11,#1                    ;secondColumn =col
+                       umn + 1
+  850 00000778         ;   SUB R10,R5,#1                     ;secondRow =row -1
+                       
+  851 00000778         ;   
+  852 00000778         ;   MUL R8,R10,R7                     ;index(Board[row])
+                        = row * length
+  853 00000778         ;   ADD R8,R8,R11                     ;index(Board[row][
+                       column) = index(Board[row]) + column
+  854 00000778         ;   LDRB R1,[R4,R8,LSL #0]            ;secondElem(Board[
+                       row,column]) = Memory.Word[Board + (index*4)]
+  855 00000778         ;  
+  856 00000778         ;   CMP R0,#0                         ;firstElem = 0?
+  857 00000778         ;   BEQ computerMoveDiagnalCheck03                ;if so
+                       , go to diagnalCheck03
+  858 00000778         ;  
+  859 00000778         ;   CMP R0,R1                         ;R0(firstElem) = R
+                       1(secondElem)?
+  860 00000778         ;   BEQ computerMoveDiagnalCheck34                ;if so
+                       , go to diagnalCheck3Part4
+  861 00000778         ;computerMoveDiagnalCheck03   
+  862 00000778         ;   MOV R9,#0                         ;reset count as 0
+  863 00000778         ;   B   computerMoveDiagnalCheck35                  ;go 
+                       to diagnalCheck3Part5
+  864 00000778         ;computerMoveDiagnalCheck34
+  865 00000778         ;   ADD R9,R9,#1                      ;count++;
+  866 00000778         ;computerMoveDiagnalCheck35
+  867 00000778         ;   SUB R5,R5,#1                      ;row--
+  868 00000778         ;   CMP R9,#3
+  869 00000778         ;   BEQ computerMoveDiagnalCheckPosResult  
+  870 00000778         ;   B   computerMoveDiagnalCheck36
+  871 00000778         ;computerMoveDiagnalCheck33
+  872 00000778         ;   MOV R5,#6                         ;R5 = row
+  873 00000778         ;   MOV R9,#0                         ;R9 = count
+  874 00000778         ;   ADD R6,R6,#1                      ;column++
+  875 00000778         ;   MOV R11,R6                        ;indexcolumn = col
+                       umn;
+  876 00000778         ;   B   computerMoveDiagnalCheck31
+  877 00000778         ;computerMoveDiagnalCheck32  
+  878 00000778         ;   B   computerMoveDiagnalCheck4
+  879 00000778         
+  880 00000778         
+  881 00000778         ;computerMoveDiagnalCheck4   
+  882 00000778         ;   MOV R5,#6                         ;R5 = row
+  883 00000778         ;   MOV R6,#3                         ;R6 = column
+  884 00000778         ;   MOV R9,#0                         ;R9 = count
+  885 00000778         ;   MOV R11,R6                        ;R11 = R6 =  index
+                       column
+
+
+
+ARM Macro Assembler    Page 23 
+
+
+  886 00000778         ;computerMoveDiagnalCheck41
+  887 00000778         ;   CMP R6,#7                         ;for(column=3;colu
+                       mn<7;
+  888 00000778         ;   BEQ computerMoveDiagnalCheck42                ;if so
+                       , go to diagnalCheck4.2
+  889 00000778         ;computerMoveDiagnalCheck46   
+  890 00000778         ;   CMP R5,#3                         ;for(row=6;3<row;
+  891 00000778         ;   BEQ computerMoveDiagnalCheck43                ;if so
+                       , go to diagnalCheck4.3
+  892 00000778         ;   MUL R8,R5,R7                      ;index(Board[row])
+                        = row * length
+  893 00000778         ;  ADD R8,R8,R11                     ;index(Board[row][c
+                       olumn) = index(Board[row]) + column
+  894 00000778         ;  LDRB R0,[R4,R8,LSL #0]            ;firstElem(Board[ro
+                       w,column]) = Memory.Word[Board + (index*4)]
+  895 00000778         
+  896 00000778         ;   SUB R11,R11,#1                    ;secondColumn =col
+                       umn - 1
+  897 00000778         ;   SUB R10,R5,#1                     ;secondRow =row -1
+                       
+  898 00000778         
+  899 00000778         ;   MUL R8,R10,R7                     ;index(Board[row])
+                        = row * length
+  900 00000778         ;   ADD R8,R8,R11                     ;index(Board[row][
+                       column) = index(Board[row]) + column
+  901 00000778         ;   LDRB R1,[R4,R8,LSL #0]            ;secondElem(Board[
+                       row,column]) = Memory.Word[Board + (index*4)]
+  902 00000778         
+  903 00000778         ;   CMP R0,#0                         ;firstElem = 0?
+  904 00000778         ;   BEQ computerMoveDiagnalCheck04                ;if so
+                       , go to diagnalCheck04
+  905 00000778         
+  906 00000778         ;   CMP R0,R1                         ;R0(firstElem) = R
+                       1(secondElem)?
+  907 00000778         ;   BEQ computerMoveDiagnalCheck44                ;if so
+                       , go to diagnalCheck4.4
+  908 00000778         ;computerMoveDiagnalCheck04   
+  909 00000778         ;   MOV R9,#0                         ;reset count as 0
+  910 00000778         ;   B   computerMoveDiagnalCheck45                  ;go 
+                       to diagnalCheck4.5
+  911 00000778         ;computerMoveDiagnalCheck44
+  912 00000778         ;   ADD R9,R9,#1                      ;count++;
+  913 00000778         ;computerMoveDiagnalCheck45
+  914 00000778         ;   SUB R5,R5,#1                      ;row--
+  915 00000778         ;   CMP R9,#3
+  916 00000778         ;   BEQ computerMoveDiagnalCheckPosResult  
+  917 00000778         ;   B   computerMoveDiagnalCheck46
+  918 00000778         ;computerMoveDiagnalCheck43
+  919 00000778         ;   MOV R5,#6                         ;R5 = row
+  920 00000778         ;   MOV R9,#0                         ;R9 = count
+  921 00000778         ;   ADD R6,R6,#1                      ;column++
+  922 00000778         ;   MOV R11,R6                        ;indexColumn = col
+                       umn
+  923 00000778         ;  B   computerMoveDiagnalCheck41
+  924 00000778         ;computerMoveDiagnalCheck42  
+  925 00000778         ;   B   computerMoveDiagnalCheckNegaticeResult  
+  926 00000778         
+  927 00000778         ;computerMoveDiagnalCheckPosResult
+  928 00000778         ;  MOV R0,R1                          ;firstElem(Board[r
+
+
+
+ARM Macro Assembler    Page 24 
+
+
+                       ow,column]) = Memory.Word[Board + (index*4)]LDR R0,LDRB
+  929 00000778         ;  B   computerMoveDiagnalCheckEnd
+  930 00000778         ;computerMoveDiagnalCheckNegaticeResult
+  931 00000778         ;  MOV R0,#0   
+  932 00000778         ;computerMoveDiagnalCheckEnd
+  933 00000778         ;  POP{R4-R12,PC}
+  934 00000778         
+  935 00000778         
+  936 00000778         
+  937 00000778         
+  938 00000778         
+  939 00000778         
+  940 00000778         ;
+  941 00000778         ; inithw subroutines
+  942 00000778         ; performs hardware initialisation, including console
+  943 00000778         ; parameters:
+  944 00000778         ; none
+  945 00000778         ; return value:
+  946 00000778         ; none
+  947 00000778         ;
+  948 00000778         inithw
+  949 00000778 E59F01F0        LDR              R0, =PINSEL0 ; enable UART0 TxD
+                                                             and RxD signals
+  950 0000077C E3A01050        MOV              R1, #0x50
+  951 00000780 E5C01000        STRB             R1, [R0]
+  952 00000784 E59F01E8        LDR              R0, =U0LCR  ; 7 data bits + par
+                                                            ity
+  953 00000788 E3A01002        LDR              R1, =0x02
+  954 0000078C E5C01000        STRB             R1, [R0]
+  955 00000790 E12FFF1E        BX               LR
+  956 00000794         
+  957 00000794         ;
+  958 00000794         ; get subroutine
+  959 00000794         ; returns the ASCII code of the next character read on t
+                       he console
+  960 00000794         ; parameters:
+  961 00000794         ; none
+  962 00000794         ; return value:
+  963 00000794         ; R0 - ASCII code of the character read on teh console (
+                       byte)
+  964 00000794         ;
+  965 00000794 E59F11DC 
+                       get     LDR              R1, =U0LSR  ; R1 -> U0LSR (Line
+                                                             Status Register)
+  966 00000798 E5910000 
+                       get0    LDR              R0, [R1]    ; wait until
+  967 0000079C E2100001        ANDS             R0, #0x01   ; receiver data
+  968 000007A0 0AFFFFFC        BEQ              get0        ; ready
+  969 000007A4 E59F11D0        LDR              R1, =U0RBR  ; R1 -> U0RBR (Rece
+                                                            iver Buffer Registe
+                                                            r)
+  970 000007A8 E5D10000        LDRB             R0, [R1]    ; get received data
+                                                            
+  971 000007AC E12FFF1E        BX               LR          ; return
+  972 000007B0         
+  973 000007B0         ;
+  974 000007B0         ; put subroutine
+  975 000007B0         ; writes a character to the console
+  976 000007B0         ; parameters:
+
+
+
+ARM Macro Assembler    Page 25 
+
+
+  977 000007B0         ; R0 - ASCII code of the character to write
+  978 000007B0         ; return value:
+  979 000007B0         ; none
+  980 000007B0         ;
+  981 000007B0 E59F11C0 
+                       put     LDR              R1, =U0LSR  ; R1 -> U0LSR (Line
+                                                             Status Register)
+  982 000007B4 E5D11000        LDRB             R1, [R1]    ; wait until transm
+                                                            it
+  983 000007B8 E2111020        ANDS             R1, R1, #0x20 
+                                                            ; holding register
+  984 000007BC 0AFFFFFB        BEQ              put         ; empty
+  985 000007C0 E59F11B4        LDR              R1, =U0THR  ; R1 -> U0THR
+  986 000007C4 E5C10000        STRB             R0, [R1]    ; output charcter
+  987 000007C8 E59F11A8 
+                       put0    LDR              R1, =U0LSR  ; R1 -> U0LSR
+  988 000007CC E5D11000        LDRB             R1, [R1]    ; wait until
+  989 000007D0 E2111040        ANDS             R1, R1, #0x40 ; transmitter
+  990 000007D4 0AFFFFFB        BEQ              put0        ; empty (data flush
+                                                            ed)
+  991 000007D8 E12FFF1E        BX               LR          ; return
+  992 000007DC         
+  993 000007DC         ;
+  994 000007DC         ; puts subroutine
+  995 000007DC         ; writes the sequence of characters in a NULL-terminated
+                        string to the console
+  996 000007DC         ; parameters:
+  997 000007DC         ; R0 - address of NULL-terminated ASCII string
+  998 000007DC         ; return value:
+  999 000007DC         ; R0 - ASCII code of the character read on teh console (
+                       byte)
+ 1000 000007DC         ;
+ 1001 000007DC E92D4010 
+                       puts    STMFD            SP!, {R4, LR} ; push R4 and LR
+ 1002 000007E0 E1A04000        MOV              R4, R0      ; copy R0
+ 1003 000007E4 E4D40001 
+                       puts0   LDRB             R0, [R4], #1 ; get character + 
+                                                            increment R4
+ 1004 000007E8 E3500000        CMP              R0, #0      ; 0?
+ 1005 000007EC 0A000001        BEQ              puts1       ; return
+ 1006 000007F0 EBFFFFEE        BL               put         ; put character
+ 1007 000007F4 EAFFFFFA        B                puts0       ; next character
+ 1008 000007F8 E8BD8010 
+                       puts1   LDMFD            SP!, {R4, PC} ; pop R4 and PC
+ 1009 000007FC         
+ 1010 000007FC         
+ 1011 000007FC         ;
+ 1012 000007FC         ; hint! put the strings used by your program here ...
+ 1013 000007FC         ;
+ 1014 000007FC         
+ 1015 000007FC         str_go
+ 1016 000007FC 4C 65 74 
+              27 73 20 
+              70 6C 61 
+              79 20 43 
+              6F 6E 6E 
+              65 63 74 
+              34 21 21 
+              0A 0D 0A 
+
+
+
+ARM Macro Assembler    Page 26 
+
+
+              0D 00            DCB              "Let's play Connect4!!",0xA, 0x
+D, 0xA, 0xD, 0
+ 1017 00000816         
+ 1018 00000816         str_go_again
+ 1019 00000816 4C 65 74 
+              27 73 20 
+              70 6C 61 
+              79 20 43 
+              6F 6E 6E 
+              65 63 74 
+              34 20 61 
+              67 61 69 
+              6E 21 21 
+              0A 0D 0A 
+              0D 00            DCB              "Let's play Connect4 again!!",0
+xA, 0xD, 0xA, 0xD, 0
+ 1020 00000836         
+ 1021 00000836         yellowPlayer
+ 1022 00000836 59 45 4C 
+              4C 4F 57 
+              3A 20 63 
+              68 6F 6F 
+              73 65 20 
+              61 20 63 
+              6F 6C 75 
+              6D 6E 20 
+              66 6F 72 
+              20 79 6F 
+              75 72 20 
+              6E 65 78 
+              74 20 6D 
+              6F 76 65 
+              20 28 31 
+              2D 37 2C 
+              20 71 20 
+              74 6F 20 
+              72 65 73 
+              74 61 72 
+              74 29 3A 
+              0A 00 00         DCB              "YELLOW: choose a column for yo
+ur next move (1-7, q to restart):",0x0a,0,0
+ 1023 00000878         
+ 1024 00000878         yellowWin
+ 1025 00000878 59 65 6C 
+              6C 6F 77 
+              20 50 6C 
+              61 79 65 
+              72 20 77 
+              69 6E 73 
+              21 21 00 
+              00 00 00 
+              00               DCB              "Yellow Player wins!!",0, 0, 0,
+ 0, 0
+ 1026 00000891         
+ 1027 00000891         redPlayer
+ 1028 00000891 52 45 44 
+              3A 20 63 
+              68 6F 6F 
+              73 65 20 
+
+
+
+ARM Macro Assembler    Page 27 
+
+
+              61 20 63 
+              6F 6C 75 
+              6D 6E 20 
+              66 6F 72 
+              20 79 6F 
+              75 72 20 
+              6E 65 78 
+              74 20 6D 
+              6F 76 65 
+              20 28 31 
+              2D 37 2C 
+              20 71 20 
+              74 6F 20 
+              72 65 73 
+              74 61 72 
+              74 29 3A 
+              0A 00 00         DCB              "RED: choose a column for your 
+next move (1-7, q to restart):",0x0a,0,0
+ 1029 000008D0         
+ 1030 000008D0         computerTurn
+ 1031 000008D0 54 68 69 
+              73 20 69 
+              73 20 61 
+              20 63 6F 
+              6D 70 75 
+              74 65 72 
+              20 74 75 
+              72 6E 3A 
+              0A 0D 0A 
+              0D 00            DCB              "This is a computer turn:",0xA,
+ 0xD, 0xA, 0xD, 0
+ 1032 000008ED         
+ 1033 000008ED         redWin
+ 1034 000008ED 52 65 64 
+              20 50 6C 
+              61 79 65 
+              72 20 77 
+              69 6E 73 
+              21 21 00 
+              00 00 00 
+              00               DCB              "Red Player wins!!",0, 0, 0, 0,
+ 0
+ 1035 00000903         
+ 1036 00000903         
+ 1037 00000903 20 31 20 
+              32 20 33 
+              20 34 20 
+              35 20 36 
+              20 37 00 
+              00 00 00 
+              00       row     DCB              " 1 2 3 4 5 6 7",0, 0, 0, 0, 0
+ 1038 00000916         
+ 1039 00000916         column
+ 1040 00000916 01 02 03 
+              04 05 06 
+              07               DCB              1,2,3,4,5,6,7
+ 1041 0000091D         
+ 1042 0000091D 0A 00 00 
+                       changeLine
+
+
+
+ARM Macro Assembler    Page 28 
+
+
+                               DCB              "",0x0a,0,0
+ 1043 00000920         
+ 1044 00000920 0A 0D 0A 
+              0D 00    changeLine2
+                               DCB              "",0xA, 0xD, 0xA, 0xD, 0
+ 1045 00000925         
+ 1046 00000925 49 6E 76 
+              61 6C 69 
+              64 20 69 
+              6E 70 75 
+              74 0A 0D 
+              0A 0D 00 errorMessage
+                               DCB              "Invalid input",0xA, 0xD, 0xA, 
+0xD, 0
+ 1047 00000937         
+ 1048 00000937         ;createSpace DCB " ",0, 0, 0, 0, 0
+ 1049 00000937         
+ 1050 00000937         str_newl
+ 1051 00000937 0A 0D 00        DCB              0xA, 0xD, 0x0
+ 1052 0000093A         
+ 1053 0000093A                 END
+              00 00 40010000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              E002C000 
+              E000C00C 
+              E000C014 
+              E000C000 
+Command Line: --debug --xref --diag_suppress=9931 --apcs=interwork --depend=.\o
+bjects\connect4.d -o.\objects\connect4.o -IC:\Keil_v5\ARM\RV31\INC -IC:\Keil_v5
+\ARM\CMSIS\Include -IC:\Keil_v5\ARM\Inc\Philips --predefine="__EVAL SETA 1" --p
+redefine="__UVISION_VERSION SETA 516" --list=.\listings\connect4.lst connect4.s
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Relocatable symbols
+
+BOARD 00000000
+
+Symbol: BOARD
+   Definitions
+      At line 16 in file connect4.s
+   Uses
+      At line 47 in file connect4.s
+      At line 49 in file connect4.s
+      At line 65 in file connect4.s
+      At line 85 in file connect4.s
+      At line 89 in file connect4.s
+      At line 98 in file connect4.s
+      At line 110 in file connect4.s
+      At line 116 in file connect4.s
+
+globals 00000000
+
+Symbol: globals
+   Definitions
+      At line 15 in file connect4.s
+   Uses
+      None
+Comment: globals unused
+2 symbols
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Relocatable symbols
+
+RESET 00000000
+
+Symbol: RESET
+   Definitions
+      At line 24 in file connect4.s
+   Uses
+      None
+Comment: RESET unused
+changeLine 0000091D
+
+Symbol: changeLine
+   Definitions
+      At line 1042 in file connect4.s
+   Uses
+      At line 175 in file connect4.s
+Comment: changeLine used once
+changeLine2 00000920
+
+Symbol: changeLine2
+   Definitions
+      At line 1044 in file connect4.s
+   Uses
+      At line 42 in file connect4.s
+      At line 82 in file connect4.s
+
+changeToRed 000000E4
+
+Symbol: changeToRed
+   Definitions
+      At line 103 in file connect4.s
+   Uses
+      At line 101 in file connect4.s
+Comment: changeToRed used once
+changeToYellow 000000EC
+
+Symbol: changeToYellow
+   Definitions
+      At line 106 in file connect4.s
+   Uses
+      At line 102 in file connect4.s
+Comment: changeToYellow used once
+checkHorizontalResetCount 000002A0
+
+Symbol: checkHorizontalResetCount
+   Definitions
+      At line 288 in file connect4.s
+   Uses
+      At line 304 in file connect4.s
+      At line 307 in file connect4.s
+
+checkVerticalResetCount 000002F0
+
+Symbol: checkVerticalResetCount
+   Definitions
+      At line 313 in file connect4.s
+   Uses
+      At line 328 in file connect4.s
+      At line 330 in file connect4.s
+
+
+
+
+ARM Macro Assembler    Page 2 Alphabetic symbol ordering
+Relocatable symbols
+
+checkWinning 00000248
+
+Symbol: checkWinning
+   Definitions
+      At line 258 in file connect4.s
+   Uses
+      At line 90 in file connect4.s
+Comment: checkWinning used once
+checkWinning1 00000260
+
+Symbol: checkWinning1
+   Definitions
+      At line 265 in file connect4.s
+   Uses
+      At line 282 in file connect4.s
+Comment: checkWinning1 used once
+checkWinning2 00000268
+
+Symbol: checkWinning2
+   Definitions
+      At line 268 in file connect4.s
+   Uses
+      At line 278 in file connect4.s
+Comment: checkWinning2 used once
+checkWinning4 0000028C
+
+Symbol: checkWinning4
+   Definitions
+      At line 279 in file connect4.s
+   Uses
+      At line 270 in file connect4.s
+Comment: checkWinning4 used once
+checkWinningEnd 00000368
+
+Symbol: checkWinningEnd
+   Definitions
+      At line 349 in file connect4.s
+   Uses
+      At line 340 in file connect4.s
+      At line 346 in file connect4.s
+
+checkWinningNextNumber 00000284
+
+Symbol: checkWinningNextNumber
+   Definitions
+      At line 276 in file connect4.s
+   Uses
+      At line 343 in file connect4.s
+Comment: checkWinningNextNumber used once
+checkingDiagnal 00000338
+
+Symbol: checkingDiagnal
+   Definitions
+      At line 333 in file connect4.s
+   Uses
+      At line 323 in file connect4.s
+Comment: checkingDiagnal used once
+checkingHorizontal1 00000298
+
+
+
+
+ARM Macro Assembler    Page 3 Alphabetic symbol ordering
+Relocatable symbols
+
+Symbol: checkingHorizontal1
+   Definitions
+      At line 285 in file connect4.s
+   Uses
+      At line 275 in file connect4.s
+Comment: checkingHorizontal1 used once
+checkingNegResult 00000364
+
+Symbol: checkingNegResult
+   Definitions
+      At line 347 in file connect4.s
+   Uses
+      At line 267 in file connect4.s
+Comment: checkingNegResult used once
+checkingPosResult 0000035C
+
+Symbol: checkingPosResult
+   Definitions
+      At line 344 in file connect4.s
+   Uses
+      At line 292 in file connect4.s
+      At line 317 in file connect4.s
+
+checkingVertical1 000002E8
+
+Symbol: checkingVertical1
+   Definitions
+      At line 310 in file connect4.s
+   Uses
+      At line 298 in file connect4.s
+Comment: checkingVertical1 used once
+checkingVertical2 000002F4
+
+Symbol: checkingVertical2
+   Definitions
+      At line 315 in file connect4.s
+   Uses
+      At line 332 in file connect4.s
+Comment: checkingVertical2 used once
+checkinghorizontal2 000002A4
+
+Symbol: checkinghorizontal2
+   Definitions
+      At line 290 in file connect4.s
+   Uses
+      At line 309 in file connect4.s
+Comment: checkinghorizontal2 used once
+choosePlayer 0000003C
+
+Symbol: choosePlayer
+   Definitions
+      At line 52 in file connect4.s
+   Uses
+      At line 105 in file connect4.s
+      At line 108 in file connect4.s
+
+column 00000916
+
+Symbol: column
+
+
+
+ARM Macro Assembler    Page 4 Alphabetic symbol ordering
+Relocatable symbols
+
+   Definitions
+      At line 1039 in file connect4.s
+   Uses
+      None
+Comment: column unused
+computerMove 000005A8
+
+Symbol: computerMove
+   Definitions
+      At line 561 in file connect4.s
+   Uses
+      At line 67 in file connect4.s
+Comment: computerMove used once
+computerMove1 000005C0
+
+Symbol: computerMove1
+   Definitions
+      At line 568 in file connect4.s
+   Uses
+      At line 585 in file connect4.s
+Comment: computerMove1 used once
+computerMove2 000005C8
+
+Symbol: computerMove2
+   Definitions
+      At line 571 in file connect4.s
+   Uses
+      At line 581 in file connect4.s
+Comment: computerMove2 used once
+computerMove4 000005EC
+
+Symbol: computerMove4
+   Definitions
+      At line 582 in file connect4.s
+   Uses
+      At line 573 in file connect4.s
+Comment: computerMove4 used once
+computerMoveCheckHorizontal1 000005F8
+
+Symbol: computerMoveCheckHorizontal1
+   Definitions
+      At line 588 in file connect4.s
+   Uses
+      At line 578 in file connect4.s
+Comment: computerMoveCheckHorizontal1 used once
+computerMoveCheckHorizontalResetCount 00000604
+
+Symbol: computerMoveCheckHorizontalResetCount
+   Definitions
+      At line 592 in file connect4.s
+   Uses
+      At line 609 in file connect4.s
+      At line 612 in file connect4.s
+
+computerMoveCheckVerticalResetCount 000006AC
+
+Symbol: computerMoveCheckVerticalResetCount
+   Definitions
+      At line 643 in file connect4.s
+
+
+
+ARM Macro Assembler    Page 5 Alphabetic symbol ordering
+Relocatable symbols
+
+   Uses
+      At line 660 in file connect4.s
+      At line 664 in file connect4.s
+
+computerMoveCheckingVertical1 000006A0
+
+Symbol: computerMoveCheckingVertical1
+   Definitions
+      At line 639 in file connect4.s
+   Uses
+      At line 603 in file connect4.s
+      At line 630 in file connect4.s
+      At line 635 in file connect4.s
+
+computerMoveCheckingVertical2 000006B4
+
+Symbol: computerMoveCheckingVertical2
+   Definitions
+      At line 646 in file connect4.s
+   Uses
+      At line 667 in file connect4.s
+Comment: computerMoveCheckingVertical2 used once
+computerMoveCheckinghorizontal2 0000060C
+
+Symbol: computerMoveCheckinghorizontal2
+   Definitions
+      At line 595 in file connect4.s
+   Uses
+      At line 615 in file connect4.s
+Comment: computerMoveCheckinghorizontal2 used once
+computerMoveEnd 00000774
+
+Symbol: computerMoveEnd
+   Definitions
+      At line 718 in file connect4.s
+   Uses
+      At line 627 in file connect4.s
+      At line 637 in file connect4.s
+      At line 679 in file connect4.s
+      At line 714 in file connect4.s
+
+computerMoveFixFirstNumber 00000728
+
+Symbol: computerMoveFixFirstNumber
+   Definitions
+      At line 692 in file connect4.s
+   Uses
+      At line 699 in file connect4.s
+Comment: computerMoveFixFirstNumber used once
+computerMoveNegResult 00000730
+
+Symbol: computerMoveNegResult
+   Definitions
+      At line 696 in file connect4.s
+   Uses
+      At line 570 in file connect4.s
+Comment: computerMoveNegResult used once
+computerMoveNegResult2 00000750
+
+
+
+
+ARM Macro Assembler    Page 6 Alphabetic symbol ordering
+Relocatable symbols
+
+Symbol: computerMoveNegResult2
+   Definitions
+      At line 707 in file connect4.s
+   Uses
+      At line 717 in file connect4.s
+Comment: computerMoveNegResult2 used once
+computerMoveNegResult3 0000076C
+
+Symbol: computerMoveNegResult3
+   Definitions
+      At line 715 in file connect4.s
+   Uses
+      At line 712 in file connect4.s
+Comment: computerMoveNegResult3 used once
+computerMoveNegResult4 00000748
+
+Symbol: computerMoveNegResult4
+   Definitions
+      At line 704 in file connect4.s
+   Uses
+      At line 702 in file connect4.s
+Comment: computerMoveNegResult4 used once
+computerMoveNegResult5 0000073C
+
+Symbol: computerMoveNegResult5
+   Definitions
+      At line 700 in file connect4.s
+   Uses
+      At line 694 in file connect4.s
+Comment: computerMoveNegResult5 used once
+computerMoveNextNumber 000005E4
+
+Symbol: computerMoveNextNumber
+   Definitions
+      At line 579 in file connect4.s
+   Uses
+      At line 691 in file connect4.s
+Comment: computerMoveNextNumber used once
+computerMovePosHorizontalResult 00000654
+
+Symbol: computerMovePosHorizontalResult
+   Definitions
+      At line 617 in file connect4.s
+   Uses
+      At line 597 in file connect4.s
+Comment: computerMovePosHorizontalResult used once
+computerMovePosHorizontalResult2 0000067C
+
+Symbol: computerMovePosHorizontalResult2
+   Definitions
+      At line 628 in file connect4.s
+   Uses
+      At line 620 in file connect4.s
+      At line 625 in file connect4.s
+
+computerMovePosVertical1Result 000006FC
+
+Symbol: computerMovePosVertical1Result
+   Definitions
+
+
+
+ARM Macro Assembler    Page 7 Alphabetic symbol ordering
+Relocatable symbols
+
+      At line 669 in file connect4.s
+   Uses
+      At line 648 in file connect4.s
+Comment: computerMovePosVertical1Result used once
+computerMovePosVertical1Result2 000006FC
+
+Symbol: computerMovePosVertical1Result2
+   Definitions
+      At line 670 in file connect4.s
+   Uses
+      None
+Comment: computerMovePosVertical1Result2 unused
+computerStaringPoint 00000078
+
+Symbol: computerStaringPoint
+   Definitions
+      At line 73 in file connect4.s
+   Uses
+      At line 70 in file connect4.s
+Comment: computerStaringPoint used once
+computerTurn 000008D0
+
+Symbol: computerTurn
+   Definitions
+      At line 1030 in file connect4.s
+   Uses
+      At line 63 in file connect4.s
+Comment: computerTurn used once
+diagnalCheck 0000036C
+
+Symbol: diagnalCheck
+   Definitions
+      At line 361 in file connect4.s
+   Uses
+      At line 337 in file connect4.s
+Comment: diagnalCheck used once
+diagnalCheck01 000003D8
+
+Symbol: diagnalCheck01
+   Definitions
+      At line 395 in file connect4.s
+   Uses
+      At line 391 in file connect4.s
+Comment: diagnalCheck01 used once
+diagnalCheck02 0000045C
+
+Symbol: diagnalCheck02
+   Definitions
+      At line 438 in file connect4.s
+   Uses
+      At line 435 in file connect4.s
+Comment: diagnalCheck02 used once
+diagnalCheck03 000004E0
+
+Symbol: diagnalCheck03
+   Definitions
+      At line 482 in file connect4.s
+   Uses
+      At line 479 in file connect4.s
+
+
+
+ARM Macro Assembler    Page 8 Alphabetic symbol ordering
+Relocatable symbols
+
+Comment: diagnalCheck03 used once
+diagnalCheck04 00000564
+
+Symbol: diagnalCheck04
+   Definitions
+      At line 525 in file connect4.s
+   Uses
+      At line 522 in file connect4.s
+Comment: diagnalCheck04 used once
+diagnalCheck1 00000388
+
+Symbol: diagnalCheck1
+   Definitions
+      At line 369 in file connect4.s
+   Uses
+      None
+Comment: diagnalCheck1 unused
+diagnalCheck11 00000398
+
+Symbol: diagnalCheck11
+   Definitions
+      At line 374 in file connect4.s
+   Uses
+      At line 410 in file connect4.s
+Comment: diagnalCheck11 used once
+diagnalCheck12 00000408
+
+Symbol: diagnalCheck12
+   Definitions
+      At line 411 in file connect4.s
+   Uses
+      At line 376 in file connect4.s
+Comment: diagnalCheck12 used once
+diagnalCheck13 000003F4
+
+Symbol: diagnalCheck13
+   Definitions
+      At line 405 in file connect4.s
+   Uses
+      At line 379 in file connect4.s
+Comment: diagnalCheck13 used once
+diagnalCheck14 000003E0
+
+Symbol: diagnalCheck14
+   Definitions
+      At line 398 in file connect4.s
+   Uses
+      At line 394 in file connect4.s
+Comment: diagnalCheck14 used once
+diagnalCheck15 000003E4
+
+Symbol: diagnalCheck15
+   Definitions
+      At line 400 in file connect4.s
+   Uses
+      At line 397 in file connect4.s
+Comment: diagnalCheck15 used once
+diagnalCheck16 000003A0
+
+
+
+
+ARM Macro Assembler    Page 9 Alphabetic symbol ordering
+Relocatable symbols
+
+Symbol: diagnalCheck16
+   Definitions
+      At line 377 in file connect4.s
+   Uses
+      At line 404 in file connect4.s
+Comment: diagnalCheck16 used once
+diagnalCheck2 0000040C
+
+Symbol: diagnalCheck2
+   Definitions
+      At line 415 in file connect4.s
+   Uses
+      At line 412 in file connect4.s
+Comment: diagnalCheck2 used once
+diagnalCheck21 0000041C
+
+Symbol: diagnalCheck21
+   Definitions
+      At line 420 in file connect4.s
+   Uses
+      At line 453 in file connect4.s
+Comment: diagnalCheck21 used once
+diagnalCheck22 0000048C
+
+Symbol: diagnalCheck22
+   Definitions
+      At line 454 in file connect4.s
+   Uses
+      At line 422 in file connect4.s
+Comment: diagnalCheck22 used once
+diagnalCheck23 00000478
+
+Symbol: diagnalCheck23
+   Definitions
+      At line 448 in file connect4.s
+   Uses
+      At line 425 in file connect4.s
+Comment: diagnalCheck23 used once
+diagnalCheck24 00000464
+
+Symbol: diagnalCheck24
+   Definitions
+      At line 441 in file connect4.s
+   Uses
+      At line 437 in file connect4.s
+Comment: diagnalCheck24 used once
+diagnalCheck25 00000468
+
+Symbol: diagnalCheck25
+   Definitions
+      At line 443 in file connect4.s
+   Uses
+      At line 440 in file connect4.s
+Comment: diagnalCheck25 used once
+diagnalCheck26 00000424
+
+Symbol: diagnalCheck26
+   Definitions
+      At line 423 in file connect4.s
+
+
+
+ARM Macro Assembler    Page 10 Alphabetic symbol ordering
+Relocatable symbols
+
+   Uses
+      At line 447 in file connect4.s
+Comment: diagnalCheck26 used once
+diagnalCheck3 00000490
+
+Symbol: diagnalCheck3
+   Definitions
+      At line 458 in file connect4.s
+   Uses
+      At line 455 in file connect4.s
+Comment: diagnalCheck3 used once
+diagnalCheck31 000004A0
+
+Symbol: diagnalCheck31
+   Definitions
+      At line 463 in file connect4.s
+   Uses
+      At line 497 in file connect4.s
+Comment: diagnalCheck31 used once
+diagnalCheck32 00000510
+
+Symbol: diagnalCheck32
+   Definitions
+      At line 498 in file connect4.s
+   Uses
+      At line 465 in file connect4.s
+Comment: diagnalCheck32 used once
+diagnalCheck33 000004FC
+
+Symbol: diagnalCheck33
+   Definitions
+      At line 492 in file connect4.s
+   Uses
+      At line 468 in file connect4.s
+Comment: diagnalCheck33 used once
+diagnalCheck34 000004E8
+
+Symbol: diagnalCheck34
+   Definitions
+      At line 485 in file connect4.s
+   Uses
+      At line 481 in file connect4.s
+Comment: diagnalCheck34 used once
+diagnalCheck35 000004EC
+
+Symbol: diagnalCheck35
+   Definitions
+      At line 487 in file connect4.s
+   Uses
+      At line 484 in file connect4.s
+Comment: diagnalCheck35 used once
+diagnalCheck36 000004A8
+
+Symbol: diagnalCheck36
+   Definitions
+      At line 466 in file connect4.s
+   Uses
+      At line 491 in file connect4.s
+Comment: diagnalCheck36 used once
+
+
+
+ARM Macro Assembler    Page 11 Alphabetic symbol ordering
+Relocatable symbols
+
+diagnalCheck4 00000514
+
+Symbol: diagnalCheck4
+   Definitions
+      At line 502 in file connect4.s
+   Uses
+      At line 499 in file connect4.s
+Comment: diagnalCheck4 used once
+diagnalCheck41 00000524
+
+Symbol: diagnalCheck41
+   Definitions
+      At line 507 in file connect4.s
+   Uses
+      At line 540 in file connect4.s
+Comment: diagnalCheck41 used once
+diagnalCheck42 00000594
+
+Symbol: diagnalCheck42
+   Definitions
+      At line 541 in file connect4.s
+   Uses
+      At line 509 in file connect4.s
+Comment: diagnalCheck42 used once
+diagnalCheck43 00000580
+
+Symbol: diagnalCheck43
+   Definitions
+      At line 535 in file connect4.s
+   Uses
+      At line 512 in file connect4.s
+Comment: diagnalCheck43 used once
+diagnalCheck44 0000056C
+
+Symbol: diagnalCheck44
+   Definitions
+      At line 528 in file connect4.s
+   Uses
+      At line 524 in file connect4.s
+Comment: diagnalCheck44 used once
+diagnalCheck45 00000570
+
+Symbol: diagnalCheck45
+   Definitions
+      At line 530 in file connect4.s
+   Uses
+      At line 527 in file connect4.s
+Comment: diagnalCheck45 used once
+diagnalCheck46 0000052C
+
+Symbol: diagnalCheck46
+   Definitions
+      At line 510 in file connect4.s
+   Uses
+      At line 534 in file connect4.s
+Comment: diagnalCheck46 used once
+diagnalCheckEnd 000005A4
+
+Symbol: diagnalCheckEnd
+
+
+
+ARM Macro Assembler    Page 12 Alphabetic symbol ordering
+Relocatable symbols
+
+   Definitions
+      At line 549 in file connect4.s
+   Uses
+      At line 546 in file connect4.s
+Comment: diagnalCheckEnd used once
+diagnalCheckNegaticeResult 000005A0
+
+Symbol: diagnalCheckNegaticeResult
+   Definitions
+      At line 547 in file connect4.s
+   Uses
+      At line 542 in file connect4.s
+Comment: diagnalCheckNegaticeResult used once
+diagnalCheckPosResult 00000598
+
+Symbol: diagnalCheckPosResult
+   Definitions
+      At line 544 in file connect4.s
+   Uses
+      At line 403 in file connect4.s
+      At line 446 in file connect4.s
+      At line 490 in file connect4.s
+      At line 533 in file connect4.s
+
+errorMessage 00000925
+
+Symbol: errorMessage
+   Definitions
+      At line 1046 in file connect4.s
+   Uses
+      At line 124 in file connect4.s
+Comment: errorMessage used once
+finishLine 0000011C
+
+Symbol: finishLine
+   Definitions
+      At line 121 in file connect4.s
+   Uses
+      At line 114 in file connect4.s
+      At line 120 in file connect4.s
+
+get 00000794
+
+Symbol: get
+   Definitions
+      At line 965 in file connect4.s
+   Uses
+      At line 72 in file connect4.s
+Comment: get used once
+get0 00000798
+
+Symbol: get0
+   Definitions
+      At line 966 in file connect4.s
+   Uses
+      At line 968 in file connect4.s
+Comment: get0 used once
+inithw 00000778
+
+
+
+
+ARM Macro Assembler    Page 13 Alphabetic symbol ordering
+Relocatable symbols
+
+Symbol: inithw
+   Definitions
+      At line 948 in file connect4.s
+   Uses
+      At line 31 in file connect4.s
+Comment: inithw used once
+initialiseBoard 0000012C
+
+Symbol: initialiseBoard
+   Definitions
+      At line 143 in file connect4.s
+   Uses
+      At line 48 in file connect4.s
+Comment: initialiseBoard used once
+initialiseBoard1 0000013C
+
+Symbol: initialiseBoard1
+   Definitions
+      At line 148 in file connect4.s
+   Uses
+      At line 153 in file connect4.s
+Comment: initialiseBoard1 used once
+initialiseBoardEnd 00000150
+
+Symbol: initialiseBoardEnd
+   Definitions
+      At line 154 in file connect4.s
+   Uses
+      At line 150 in file connect4.s
+Comment: initialiseBoardEnd used once
+invalidInput 0000011C
+
+Symbol: invalidInput
+   Definitions
+      At line 123 in file connect4.s
+   Uses
+      At line 78 in file connect4.s
+      At line 80 in file connect4.s
+
+makeMove 00000200
+
+Symbol: makeMove
+   Definitions
+      At line 224 in file connect4.s
+   Uses
+      At line 87 in file connect4.s
+Comment: makeMove used once
+makeMove1 0000021C
+
+Symbol: makeMove1
+   Definitions
+      At line 232 in file connect4.s
+   Uses
+      None
+Comment: makeMove1 unused
+makeMove4 0000021C
+
+Symbol: makeMove4
+   Definitions
+
+
+
+ARM Macro Assembler    Page 14 Alphabetic symbol ordering
+Relocatable symbols
+
+      At line 234 in file connect4.s
+   Uses
+      At line 245 in file connect4.s
+Comment: makeMove4 used once
+makeMove5 00000238
+
+Symbol: makeMove5
+   Definitions
+      At line 242 in file connect4.s
+   Uses
+      At line 239 in file connect4.s
+Comment: makeMove5 used once
+makeMoveEnd 00000244
+
+Symbol: makeMoveEnd
+   Definitions
+      At line 246 in file connect4.s
+   Uses
+      At line 241 in file connect4.s
+Comment: makeMoveEnd used once
+nobodyWin 000000D0
+
+Symbol: nobodyWin
+   Definitions
+      At line 97 in file connect4.s
+   Uses
+      At line 93 in file connect4.s
+Comment: nobodyWin used once
+preCheckWinningNextNumber 00000354
+
+Symbol: preCheckWinningNextNumber
+   Definitions
+      At line 341 in file connect4.s
+   Uses
+      At line 339 in file connect4.s
+Comment: preCheckWinningNextNumber used once
+preComputerMoveNextNumber 00000720
+
+Symbol: preComputerMoveNextNumber
+   Definitions
+      At line 689 in file connect4.s
+   Uses
+      At line 654 in file connect4.s
+      At line 672 in file connect4.s
+      At line 677 in file connect4.s
+
+preRunprogram 00000028
+
+Symbol: preRunprogram
+   Definitions
+      At line 46 in file connect4.s
+   Uses
+      At line 40 in file connect4.s
+Comment: preRunprogram used once
+printBoard 00000154
+
+Symbol: printBoard
+   Definitions
+      At line 163 in file connect4.s
+
+
+
+ARM Macro Assembler    Page 15 Alphabetic symbol ordering
+Relocatable symbols
+
+   Uses
+      At line 50 in file connect4.s
+      At line 99 in file connect4.s
+      At line 111 in file connect4.s
+      At line 117 in file connect4.s
+
+printBoard1 00000164
+
+Symbol: printBoard1
+   Definitions
+      At line 168 in file connect4.s
+   Uses
+      None
+Comment: printBoard1 unused
+printBoard2 00000178
+
+Symbol: printBoard2
+   Definitions
+      At line 174 in file connect4.s
+   Uses
+      At line 212 in file connect4.s
+Comment: printBoard2 used once
+printBoard4 000001F0
+
+Symbol: printBoard4
+   Definitions
+      At line 209 in file connect4.s
+   Uses
+      At line 185 in file connect4.s
+Comment: printBoard4 used once
+printBoard5 00000198
+
+Symbol: printBoard5
+   Definitions
+      At line 183 in file connect4.s
+   Uses
+      At line 208 in file connect4.s
+Comment: printBoard5 used once
+printBoardEnd 000001FC
+
+Symbol: printBoardEnd
+   Definitions
+      At line 213 in file connect4.s
+   Uses
+      At line 178 in file connect4.s
+Comment: printBoardEnd used once
+printBord7 000001E0
+
+Symbol: printBord7
+   Definitions
+      At line 204 in file connect4.s
+   Uses
+      At line 193 in file connect4.s
+      At line 199 in file connect4.s
+      At line 203 in file connect4.s
+
+printbord6 000001C0
+
+Symbol: printbord6
+
+
+
+ARM Macro Assembler    Page 16 Alphabetic symbol ordering
+Relocatable symbols
+
+   Definitions
+      At line 194 in file connect4.s
+   Uses
+      At line 190 in file connect4.s
+Comment: printbord6 used once
+printbord8 000001D4
+
+Symbol: printbord8
+   Definitions
+      At line 200 in file connect4.s
+   Uses
+      At line 196 in file connect4.s
+Comment: printbord8 used once
+put 000007B0
+
+Symbol: put
+   Definitions
+      At line 981 in file connect4.s
+   Uses
+      At line 74 in file connect4.s
+      At line 181 in file connect4.s
+      At line 192 in file connect4.s
+      At line 198 in file connect4.s
+      At line 202 in file connect4.s
+      At line 207 in file connect4.s
+      At line 984 in file connect4.s
+      At line 1006 in file connect4.s
+
+put0 000007C8
+
+Symbol: put0
+   Definitions
+      At line 987 in file connect4.s
+   Uses
+      At line 990 in file connect4.s
+Comment: put0 used once
+puts 000007DC
+
+Symbol: puts
+   Definitions
+      At line 1001 in file connect4.s
+   Uses
+      At line 39 in file connect4.s
+      At line 43 in file connect4.s
+      At line 45 in file connect4.s
+      At line 58 in file connect4.s
+      At line 64 in file connect4.s
+      At line 83 in file connect4.s
+      At line 113 in file connect4.s
+      At line 119 in file connect4.s
+      At line 125 in file connect4.s
+      At line 167 in file connect4.s
+      At line 176 in file connect4.s
+
+puts0 000007E4
+
+Symbol: puts0
+   Definitions
+      At line 1003 in file connect4.s
+
+
+
+ARM Macro Assembler    Page 17 Alphabetic symbol ordering
+Relocatable symbols
+
+   Uses
+      At line 1007 in file connect4.s
+Comment: puts0 used once
+puts1 000007F8
+
+Symbol: puts1
+   Definitions
+      At line 1008 in file connect4.s
+   Uses
+      At line 1005 in file connect4.s
+Comment: puts1 used once
+redPlayer 00000891
+
+Symbol: redPlayer
+   Definitions
+      At line 1027 in file connect4.s
+   Uses
+      None
+Comment: redPlayer unused
+redWin 000008ED
+
+Symbol: redWin
+   Definitions
+      At line 1033 in file connect4.s
+   Uses
+      At line 118 in file connect4.s
+Comment: redWin used once
+restart 00000018
+
+Symbol: restart
+   Definitions
+      At line 41 in file connect4.s
+   Uses
+      At line 76 in file connect4.s
+Comment: restart used once
+row 00000903
+
+Symbol: row
+   Definitions
+      At line 1037 in file connect4.s
+   Uses
+      At line 166 in file connect4.s
+Comment: row used once
+runProgram 00000074
+
+Symbol: runProgram
+   Definitions
+      At line 71 in file connect4.s
+   Uses
+      At line 59 in file connect4.s
+Comment: runProgram used once
+selectRed 00000054
+
+Symbol: selectRed
+   Definitions
+      At line 60 in file connect4.s
+   Uses
+      At line 55 in file connect4.s
+Comment: selectRed used once
+
+
+
+ARM Macro Assembler    Page 18 Alphabetic symbol ordering
+Relocatable symbols
+
+selectYellow 00000048
+
+Symbol: selectYellow
+   Definitions
+      At line 56 in file connect4.s
+   Uses
+      At line 54 in file connect4.s
+      At line 126 in file connect4.s
+
+stop 00000128
+
+Symbol: stop
+   Definitions
+      At line 129 in file connect4.s
+   Uses
+      At line 129 in file connect4.s
+Comment: stop used once
+str_go 000007FC
+
+Symbol: str_go
+   Definitions
+      At line 1015 in file connect4.s
+   Uses
+      At line 38 in file connect4.s
+Comment: str_go used once
+str_go_again 00000816
+
+Symbol: str_go_again
+   Definitions
+      At line 1018 in file connect4.s
+   Uses
+      At line 44 in file connect4.s
+Comment: str_go_again used once
+str_newl 00000937
+
+Symbol: str_newl
+   Definitions
+      At line 1050 in file connect4.s
+   Uses
+      None
+Comment: str_newl unused
+winRed 00000108
+
+Symbol: winRed
+   Definitions
+      At line 115 in file connect4.s
+   Uses
+      At line 96 in file connect4.s
+Comment: winRed used once
+winYellow 000000F4
+
+Symbol: winYellow
+   Definitions
+      At line 109 in file connect4.s
+   Uses
+      At line 95 in file connect4.s
+Comment: winYellow used once
+yellowPlayer 00000836
+
+
+
+
+ARM Macro Assembler    Page 19 Alphabetic symbol ordering
+Relocatable symbols
+
+Symbol: yellowPlayer
+   Definitions
+      At line 1021 in file connect4.s
+   Uses
+      At line 57 in file connect4.s
+Comment: yellowPlayer used once
+yellowWin 00000878
+
+Symbol: yellowWin
+   Definitions
+      At line 1024 in file connect4.s
+   Uses
+      At line 112 in file connect4.s
+Comment: yellowWin used once
+129 symbols
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Absolute symbols
+
+PINSEL0 E002C000
+
+Symbol: PINSEL0
+   Definitions
+      At line 8 in file connect4.s
+   Uses
+      At line 949 in file connect4.s
+Comment: PINSEL0 used once
+U0LCR E000C00C
+
+Symbol: U0LCR
+   Definitions
+      At line 11 in file connect4.s
+   Uses
+      At line 952 in file connect4.s
+Comment: U0LCR used once
+U0LSR E000C014
+
+Symbol: U0LSR
+   Definitions
+      At line 12 in file connect4.s
+   Uses
+      At line 965 in file connect4.s
+      At line 981 in file connect4.s
+      At line 987 in file connect4.s
+
+U0RBR E000C000
+
+Symbol: U0RBR
+   Definitions
+      At line 9 in file connect4.s
+   Uses
+      At line 969 in file connect4.s
+Comment: U0RBR used once
+U0THR E000C000
+
+Symbol: U0THR
+   Definitions
+      At line 10 in file connect4.s
+   Uses
+      At line 985 in file connect4.s
+Comment: U0THR used once
+5 symbols
+470 symbols in table

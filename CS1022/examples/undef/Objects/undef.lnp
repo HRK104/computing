@@ -1,0 +1,6 @@
+--cpu ARM7TDMI
+".\objects\undef.o"
+--scatter ".\lpc2468Flash.sct"
+--summary_stderr --info summarysizes --map --xref --callgraph --symbols
+--info sizes --info totals --info unused --info veneers
+--list ".\Listings\undef.map" -o .\Objects\undef.axf

@@ -1,0 +1,129 @@
+
+
+
+ARM Macro Assembler    Page 1 
+
+
+    1 00000000         ;
+    2 00000000         ; CS1021 2018/2019 Lab 1
+    3 00000000         ; 
+    4 00000000         
+    5 00000000                 AREA             RESET, CODE, READONLY
+    6 00000000                 ENTRY
+    7 00000000         
+    8 00000000         ;
+    9 00000000         ; start of code
+   10 00000000         ;
+   11 00000000 E3A01005        LDR              R1, =5
+   12 00000004 E3A02006        LDR              R2, =6
+   13 00000008 E3A03002        LDR              R3, =2
+   14 0000000C         ;
+   15 0000000C         ; compute 3*x*x + 5x (35 or 0x23)
+   16 0000000C         ;
+   17 0000000C E1A00001        MOV              R0, R1      ; R0 = x
+   18 00000010 E0000091        MUL              R0, R1, R0  ; R0 = x*x 
+   19 00000014 E3A04003        MOV              R4, #3      ; R4 = 3
+   20 00000018 E0000094        MUL              R0, R4, R0  ; R0 = 3x*x
+   21 0000001C E3A04005        MOV              R4, #5      ; R4 = 5
+   22 00000020 E0040491        MUL              R4, R1, R4  ; R4 = 5x
+   23 00000024 E0800004        ADD              R0, R0, R4  ; R0 = 3x*x + 5x
+   24 00000028         
+   25 00000028         ;
+   26 00000028         ; compute 2*x*x + 6*xy + 3y*y
+   27 00000028         ;
+   28 00000028 E0000191        MUL              R0, R1, R1  ; R0 = x*x
+   29 0000002C E3A04002        MOV              R4, #2      ; R4 = 2
+   30 00000030 E0000094        MUL              R0, R4, R0  ; R0 = 2x*x
+   31 00000034 E0040291        MUL              R4, R1, R2  ; R4 = xy
+   32 00000038 E3A05006        MOV              R5, #6      ; R5 = 6
+   33 0000003C E0040495        MUL              R4, R5, R4  ; R4 = 6xy
+   34 00000040 E0800004        ADD              R0, R0, R4  ; R0 = 2x*x + 6x*y
+   35 00000044 E0040292        MUL              R4, R2, R2  ; R4 = y*y
+   36 00000048 E3A05003        MOV              R5, #3      ; R5 = 3
+   37 0000004C E0040495        MUL              R4, R5, R4  ; R4 = 3y*y
+   38 00000050 E0800004        ADD              R0, R0, R4  ; R0 = 2x*x + 6x*y 
+                                                            + 3y*y
+   39 00000054         
+   40 00000054         
+   41 00000054         ;
+   42 00000054         ; compute x*x*x -4*x*x + 3*x +8
+   43 00000054         ;
+   44 00000054         
+   45 00000054 E0000191        MUL              R0, R1, R1  ; R0 = x*x
+   46 00000058 E0000091        MUL              R0, R1, R0  ; R0 = x*x*x
+   47 0000005C E3A04004        MOV              R4, #4      ; R4 = 4
+   48 00000060 E0040491        MUL              R4, R1, R4  ; R4 = 4x
+   49 00000064 E0040491        MUL              R4, R1, R4  ; R4 = 4x*x
+   50 00000068 E0400004        SUB              R0, R0, R4  ; R0 = x*x*x - 4x*x
+                                                            
+   51 0000006C E3A04003        MOV              R4, #3      ; R4 = 3
+   52 00000070 E0040491        MUL              R4, R1, R4  ; R4 = 3x
+   53 00000074 E0800004        ADD              R0, R0, R4  ; R0 = x*x*x - 4x*x
+                                                             + 3x
+   54 00000078 E3A04008        MOV              R4, #8      ; R4 = 8
+   55 0000007C E2800008        ADD              R0, R0, #8  ; R0 = x*x*x -4x*x 
+                                                            + 3x + 8
+
+
+
+ARM Macro Assembler    Page 2 
+
+
+   56 00000080         
+   57 00000080         
+   58 00000080         
+   59 00000080         ;
+   60 00000080         ; compute 3x*x*x*x - 5x - 16y*y*y*y*z*z*z*z
+   61 00000080         ;
+   62 00000080         
+   63 00000080 E3A00003        MOV              R0, #3      ; R0 = 3
+   64 00000084 E0040191        MUL              R4, R1, R1  ; R4 = x*x
+   65 00000088 E0000094        MUL              R0, R4, R0  ; R0 = 3x*x 
+   66 0000008C E0000094        MUL              R0, R4, R0  ; R0 = 3x*x*x*x
+   67 00000090 E3A04005        MOV              R4, #5      ; R4 = 5
+   68 00000094 E0040491        MUL              R4, R1, R4  ; R4 = 5x
+   69 00000098 E0400004        SUB              R0, R0, R4  ; R0 = 3x*x*x*x - 5
+                                                            x
+   70 0000009C E0824002        ADD              R4, R2, R2  ; R4 = 2y
+   71 000000A0 E0040493        MUL              R4, R3, R4  ; R4 = 2y*z
+   72 000000A4 E0050494        MUL              R5, R4, R4  ; R5 = 4y*y*z*z
+   73 000000A8 E0040595        MUL              R4, R5, R5  ; R4 = 16y*y*y*y*z*
+                                                            z*z*z
+   74 000000AC E0400004        SUB              R0, R0, R4  ; R0 = 3x*x*x*x - 5
+                                                            x - 16y*y*y*y*z*z*z
+                                                            *z
+   75 000000B0         
+   76 000000B0         
+   77 000000B0 EAFFFFFE 
+                       L       B                L           ; infinite loop to 
+                                                            end programme
+   78 000000B4         
+   79 000000B4                 END
+Command Line: --debug --xref --diag_suppress=9931 --apcs=interwork --depend=.\o
+bjects\lab1.d -o.\objects\lab1.o -IC:\Keil_v5\ARM\RV31\INC -IC:\Keil_v5\ARM\CMS
+IS\Include -IC:\Keil_v5\ARM\Inc\Philips --predefine="__EVAL SETA 1" --predefine
+="__UVISION_VERSION SETA 516" --list=.\listings\lab1.lst lab1.s
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Relocatable symbols
+
+L 000000B0
+
+Symbol: L
+   Definitions
+      At line 77 in file lab1.s
+   Uses
+      At line 77 in file lab1.s
+Comment: L used once
+RESET 00000000
+
+Symbol: RESET
+   Definitions
+      At line 5 in file lab1.s
+   Uses
+      None
+Comment: RESET unused
+2 symbols
+334 symbols in table

@@ -1,0 +1,2 @@
+Dependencies for Project 'blinky', Target 'Hardware (Load to RAM)': (DO NOT MODIFY !)
+F (.\blinky.s)(0x5C86599E)(--cpu ARM7TDMI --pd "__EVAL SETA 1" -g --apcs=interwork -I C:\Keil_v5\ARM\RV31\INC-I C:\Keil_v5\ARM\CMSIS\Include-I C:\Keil_v5\ARM\Inc\Philips--pd "__UVISION_VERSION SETA 516"--list .\listings\blinky.lst --xref -o .\objects\blinky.o --depend .\objects\blinky.d)

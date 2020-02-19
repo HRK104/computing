@@ -1,0 +1,956 @@
+
+
+
+ARM Macro Assembler    Page 1 
+
+
+    1 00000000         ;
+    2 00000000         ; CS1021 2018/2019 Lab 6
+    3 00000000         ;
+    4 00000000         ; RAM @ 0x4000000 sz = 0x10000 (64K)
+    5 00000000         ;
+    6 00000000         
+    7 00000000         ;
+    8 00000000         ; hardware registers
+    9 00000000         ;
+   10 00000000         
+   11 00000000 E002C000 
+                       PINSEL0 EQU              0xE002C000
+   12 00000000         
+   13 00000000 E000C000 
+                       U0RBR   EQU              0xE000C000
+   14 00000000 E000C000 
+                       U0THR   EQU              0xE000C000
+   15 00000000 E000C00C 
+                       U0LCR   EQU              0xE000C00C
+   16 00000000 E000C014 
+                       U0LSR   EQU              0xE000C014
+   17 00000000         
+   18 00000000         
+   19 00000000                 AREA             RESET, CODE, READONLY
+   20 00000000                 ENTRY
+   21 00000000         
+   22 00000000         ; 
+   23 00000000         ; hardware initialisation
+   24 00000000         ;
+   25 00000000 E59FD310        LDR              R13, =0x40010000 ; initialse SP
+                                                            
+   26 00000004 E59F0310        LDR              R0, =PINSEL0 ; enable UART0 TxD
+                                                             and RxD signals
+   27 00000008 E3A01050        MOV              R1, #0x50
+   28 0000000C E5C01000        STRB             R1, [R0]
+   29 00000010 E59F0308        LDR              R0, =U0LCR  ; 7 data bits + par
+                                                            ity
+   30 00000014 E3A01002        LDR              R1, =0x02
+   31 00000018 E5C01000        STRB             R1, [R0]
+   32 0000001C         
+   33 0000001C         ;
+   34 0000001C         ; add your code here for the Sieve of Eratosthenes
+   35 0000001C         ;
+   36 0000001C         
+   37 0000001C         ;
+   38 0000001C         ;N =10 # primes =
+   39 0000001C         ;N =100 # primes =23 (R5 = 0x19)
+   40 0000001C         ;N =1000 # primes = 195
+   41 0000001C         ;N =10000 # primes =
+   42 0000001C         ;N =100000 # primes =
+   43 0000001C E3A04105        LDR              R4,=0x40000001 
+                                                            ;R4 -> 0x40000001
+   44 00000020 E3A05011        MOV              R5,#0x11    ;R5 = 0x11
+   45 00000024 E3A06004        LDR              R6,=0x4     ;R6 =0xC34F(=49=(10
+                                                            0-1)/2=(100+1-2)/2)
+                                                            
+   46 00000028 E1A0B006        MOV              R11,R6      ;R11 =R6
+   47 0000002C E4C45001 
+                       L       STRB             R5,[R4],#1  ;R5 = R4, R4=R4+1
+
+
+
+ARM Macro Assembler    Page 2 
+
+
+   48 00000030 E2466001        SUB              R6,R6,#1    ;R6 = R6-1
+   49 00000034 E3560000        CMP              R6,#0       ;R6 = 0 ?
+   50 00000038 1AFFFFFB        BNE              L           ;if not R6 = 0, go 
+                                                            to L
+   51 0000003C E3A06001        LDR              R6,=0x01    ;R = 0x01
+   52 00000040 E5C46000        STRB             R6,[R4]     ;R6 = a byte of R4
+   53 00000044 E28BB001        ADD              R11,R11,#1  ;R11 = R11+1
+   54 00000048         
+   55 00000048 E1A07004        MOV              R7,R4       ;R7 = R4   (R7=last
+                                                             memory)
+   56 0000004C E3A05000        MOV              R5,#0       ;R5 =0(count of pri
+                                                            me)
+   57 00000050 E3A02000 
+                       L1      MOV              R2,#0
+   58 00000054 E3A08000        MOV              R8,#0       ;R8 = 0
+   59 00000058 E3A04101        LDR              R4,=0x40000000 
+                                                            ;R4 -> 0x40000000
+   60 0000005C E5D46000        LDRB             R6,[R4]     ;R6 = byte of R4
+   61 00000060 EA00003D        B                L3          ;go to L2
+   62 00000064 E2844001 
+                       L2      ADD              R4,R4,#1    ;R4 = R4+1
+   63 00000068 E2888001        ADD              R8,R8,#1    ;R8 = R8+1   (R8 = 
+                                                            count number until 
+                                                            R6=0x00)
+   64 0000006C         
+   65 0000006C E5D46000        LDRB             R6,[R4]     ;R6 = byte of R4
+   66 00000070 EA000039        B                L3
+   67 00000074         
+   68 00000074         ;CASE OF "2"
+   69 00000074 E2855001 
+                       L12     ADD              R5,R5,#1    ;R5 =R5+1 (count++)
+                                                             
+   70 00000078 E1A0A004        MOV              R10, R4     ;R10 = R4 
+   71 0000007C E5D46000        LDRB             R6,[R4]     ;R6 = byte of R4
+   72 00000080         
+   73 00000080         L13
+   74 00000080         
+   75 00000080 E3A09001        MOV              R9,#0x01    ;R9 = 0xFF
+   76 00000084 E1C66009        BIC              R6,R6,R9    ;clear byte of R4
+   77 00000088 E5C46000        STRB             R6,[R4]     ;R6 = the byte of R
+                                                            4 
+   78 0000008C E0844008        ADD              R4,R4,R8    ;R4 = R4 + R8(count
+                                                             refered to line)
+   79 00000090 E1540007        CMP              R4,R7       ;R8 >= R7?
+   80 00000094 AA000001        BGE              L14         ;if R8>=R7, go to L
+                                                            13
+   81 00000098 E5D46000        LDRB             R6,[R4]     ;R6 = byte of R4
+   82 0000009C EAFFFFF7        B                L13         ;go to L12
+   83 000000A0         ;CASE OF "10"
+   84 000000A0 E1A0400A 
+                       L14     MOV              R4, R10     ;R4 =R10
+   85 000000A4 E2888002        ADD              R8,R8,#2    ;R8 = R8+
+   86 000000A8 EAFFFFFF        B                L30
+   87 000000AC         
+   88 000000AC E2855001 
+                       L30     ADD              R5,R5,#1    ;R5 = R5 +1(count++
+                                                            )
+   89 000000B0 E5D46000        LDRB             R6,[R4]     ;R6 = byte of R4
+   90 000000B4         
+
+
+
+ARM Macro Assembler    Page 3 
+
+
+   91 000000B4 E3A09010        MOV              R9,#0x10    ;R9 = 0xFF
+   92 000000B8 E1C66009        BIC              R6,R6,R9    ;clear byte of R4
+   93 000000BC E5C46000        STRB             R6,[R4]     ;R6 = the byte of R
+                                                            4 
+   94 000000C0 E3A0A000        MOV              R10,#0      ;R10 =0
+   95 000000C4         
+   96 000000C4         L15
+   97 000000C4 E3A09010        MOV              R9,#0x10    ;R9 = 0x10
+   98 000000C8 E3A0A001        MOV              R10,#0x01   ;R10 = 0x01
+   99 000000CC         
+  100 000000CC E0822008 
+                       L20     ADD              R2,R2,R8    ;R2 = R2+R8
+  101 000000D0         
+  102 000000D0 E5D46000        LDRB             R6,[R4]     ;R6 = byte of R4
+  103 000000D4 E202C001        AND              R12, R2,#0x1
+  104 000000D8 E35C0000        CMP              R12, #0
+  105 000000DC 1A000001        BNE              L21
+  106 000000E0 E1C66009        BIC              R6,R9       ;R4 && R9 <<R10
+  107 000000E4 EA000000        B                L22
+  108 000000E8 E1C6600A 
+                       L21     BIC              R6,R10      ;R4 && R9 <<R10   
+  109 000000EC E5C46000 
+                       L22     STRB             R6,[R4]     ;R6 = the byte of R
+                                                            4 
+  110 000000F0 E0844008        ADD              R4,R4,R8    ;R4 = R4+1
+  111 000000F4 E1540007        CMP              R4,R7       ;R8 >= R7?
+  112 000000F8 AAFFFFD4        BGE              L1          ;if R8>=R7, go to L
+                                                            4
+  113 000000FC EAFFFFF2        B                L20         ;go to L13
+  114 00000100         
+  115 00000100 E2888001 
+                       L18     ADD              R8,R8,#1
+  116 00000104 E2855001 
+                       L40     ADD              R5,R5,#1    ;R5 = R5 +1(count++
+                                                            )
+  117 00000108 E5D46000        LDRB             R6,[R4]     ;R6 = byte of R4
+  118 0000010C         
+  119 0000010C E3A09010        MOV              R9,#0x10    ;R9 = 0xFF
+  120 00000110 E1C66009        BIC              R6,R6,R9    ;clear byte of R4
+  121 00000114 E5C46000        STRB             R6,[R4]     ;R6 = the byte of R
+                                                            4 
+  122 00000118 E3A0A000        MOV              R10,#0      ;R10 =0
+  123 0000011C         
+  124 0000011C         L41
+  125 0000011C E3A09010        MOV              R9,#0x10    ;R9 = 0x10
+  126 00000120 E3A0A001        MOV              R10,#0x01   ;R10 = 0x01
+  127 00000124         
+  128 00000124 E0822008 
+                       L42     ADD              R2,R2,R8    ;R2 = R2+R8
+  129 00000128         
+  130 00000128 E5D46000        LDRB             R6,[R4]     ;R6 = byte of R4
+  131 0000012C E202C001        AND              R12, R2,#0x1
+  132 00000130 E35C0000        CMP              R12, #0
+  133 00000134 1A000001        BNE              L43
+  134 00000138 E1C66009        BIC              R6,R9       ;R4 && R9 <<R10
+  135 0000013C EA000000        B                L44
+  136 00000140 E1C6600A 
+                       L43     BIC              R6,R10      ;R4 && R9 <<R10   
+  137 00000144 E5C46000 
+
+
+
+ARM Macro Assembler    Page 4 
+
+
+                       L44     STRB             R6,[R4]     ;R6 = the byte of R
+                                                            4 
+  138 00000148 E0844008        ADD              R4,R4,R8    ;R4 = R4+1
+  139 0000014C E1540007        CMP              R4,R7       ;R8 >= R7?
+  140 00000150 AAFFFFBE        BGE              L1          ;if R8>=R7, go to L
+                                                            4
+  141 00000154 EAFFFFF2        B                L42         ;go to L13
+  142 00000158         L16
+  143 00000158 EA000007        B                L5          ;go to L5
+  144 0000015C         
+  145 0000015C E3560000 
+                       L3      CMP              R6,#0x00    ;R6 = 0x00 ?
+  146 00000160 0AFFFFBF        BEQ              L2          ;if R4 = 0x01, go t
+                                                            o L1
+  147 00000164 E3560010        CMP              R6,#0x10    ;R6 = 0x10?
+  148 00000168 0AFFFFE4        BEQ              L18         ;if R6 = 0x10, go t
+                                                            o L11
+  149 0000016C E3560011        CMP              R6,#0x11    ;R6 = 0x11?
+  150 00000170 0AFFFFBF        BEQ              L12         ;if R6 = 0x11, go t
+                                                            o L12
+  151 00000174 E3560001        CMP              R6,#0x01    ;if R4 = 0x11, go t
+                                                            o L1
+  152 00000178 0AFFFFF6        BEQ              L16         ;if R6 = 0x01, go t
+                                                            o L16
+  153 0000017C         
+  154 0000017C         
+  155 0000017C E59F01A0 
+                       L5      LDR              R0,=STR0    ;"There are "
+  156 00000180 EB00005C        BL               PUTS
+  157 00000184 EB000006 
+                       L6      BL               SUB1
+  158 00000188 EB00004F 
+                       L7      BL               PUT         ;put character 
+  159 0000018C EB000026        BL               SUB0
+  160 00000190 E3540000        CMP              R4,#0       ;R4(Divider) >0?
+  161 00000194 CAFFFFFB        BGT              L7
+  162 00000198 E59F0188        LDR              R0,=STR1    ;" primes int the f
+                                                            irst 100 integers."
+                                                            
+  163 0000019C EB000055        BL               PUTS
+  164 000001A0         
+  165 000001A0 EAFFFFFE 
+                       STOP    B                STOP
+  166 000001A4         
+  167 000001A4         
+  168 000001A4         
+  169 000001A4         ;
+  170 000001A4         ;this part of program is for outputing an integer as dec
+                       imal number, using ASCII code
+  171 000001A4         ;
+  172 000001A4         SUB1
+  173 000001A4 E59F4180        LDR              R4,=1000000000 ;R4 = 1000000000
+                                                            
+  174 000001A8 E1540005 
+                       SUB2    CMP              R4,R5       ;R4(Divider) >R5(Qu
+                                                            otinent)?
+  175 000001AC 9A000011        BLS              SUB6        ;if R5 =< R4, go to
+                                                             L7
+  176 000001B0         ;D = D/10
+
+
+
+ARM Macro Assembler    Page 5 
+
+
+  177 000001B0         ;R4 = Numerator 
+  178 000001B0 E3A0B00A        MOV              R11,#10     ;R11 =10 Divider=R1
+                                                            1
+  179 000001B4 E3A06000 
+                       SUB3    MOV              R6,#0       ;R6 =0   Quotinent 
+                                                            =R6
+  180 000001B8 E3A07000        MOV              R7,#0       ;R7 =0 Remainder=R7
+                                                            
+  181 000001BC E3A0801F        MOV              R8,#31      ;R8 = 31,     i=R8 
+                                                                           
+  182 000001C0 E3A09001        MOV              R9,#1       ;R9 =1(used as mask
+                                                            )
+  183 000001C4 E3580000 
+                       SUB4    CMP              R8,#0       ;i==0?
+  184 000001C8 BA000008        BLT              SUB13       ;if i<0, go to SUB1
+                                                            3
+  185 000001CC E1A07087        MOV              R7,R7,LSL#1 ;R = R<<1
+  186 000001D0 E009A834        AND              R10,R9,R4,LSR R8 ;R[0] = N[i]
+  187 000001D4 E187700A        ORR              R7,R7,R10
+  188 000001D8 E157000B        CMP              R7,R11      ;R>=D?
+  189 000001DC BA000001        BLT              SUB5        ;if R<D, go to SUB5
+                                                            
+  190 000001E0 E047700B        SUB              R7,R7,R11   ;R = R-D
+  191 000001E4 E1866819        ORR              R6,R6,R9,LSL R8 ;Q[i] =1
+  192 000001E8 E2488001 
+                       SUB5    SUB              R8,R8,#1    ;i = i-1
+  193 000001EC EAFFFFF4        B                SUB4        ;go to SUB4
+  194 000001F0 E1A04006 
+                       SUB13   MOV              R4,R6       ;R4 = R6
+  195 000001F4 EAFFFFEB        B                SUB2        ;go to SUB2
+  196 000001F8         
+  197 000001F8 E3A06000 
+                       SUB6    MOV              R6,#0       ;R6 =0 
+  198 000001FC E3540000        CMP              R4,#0       ;R4(Divider) >0?
+  199 00000200 9A00001C        BLS              SUB7        ;if R4 =< 0, go to 
+                                                            SUB7
+  200 00000204 E1A08004        MOV              R8,R4       ;R8 = R4
+  201 00000208 E0056004        AND              R6,R5,R4    ;R6 = R5%R4    
+  202 0000020C         ;Q = Q / D; ; quotient
+  203 0000020C E3A07000        MOV              R7,#0       ;R7(Quotinent) = 0
+  204 00000210 E1550004 
+                       SUB8    CMP              R5,R4       ;R5(Remainder) >= R
+                                                            4(Divider)?
+  205 00000214 BA000002        BLT              SUB9        ;if R5 < R4, go to 
+                                                            SUB9               
+                                                                
+  206 00000218 E2877001        ADD              R7,R7,#1    ;R7(Quotinent) = R7
+                                                             +1
+  207 0000021C E0455004        SUB              R5,R5,R4    ;R5 = R5-R4
+  208 00000220 EAFFFFFA        B                SUB8        ;go to SUB8
+  209 00000224 E2870030 
+                       SUB9    ADD              R0,R7,#0x30 ;R0 = R7 + 0x30
+  210 00000228 E12FFF1E        BX               LR          ;return
+  211 0000022C         
+  212 0000022C         
+  213 0000022C E1A07005 
+                       SUB0    MOV              R7,R5       ;Q = R5
+  214 00000230         ;D = D/10
+  215 00000230         ;R4 = Numerator 
+
+
+
+ARM Macro Assembler    Page 6 
+
+
+  216 00000230 E3A0B00A        MOV              R11,#10     ;R11 =10 Divider=R1
+                                                            1
+  217 00000234 E3A06000 
+                       SUB10   MOV              R6,#0       ;R6 =0   Quotinent 
+                                                            =R6
+  218 00000238 E3A07000        MOV              R7,#0       ;R7 =0 Remainder=R7
+                                                            
+  219 0000023C E3A0801F        MOV              R8,#31      ;R8 = 31,     i=R8 
+                                                                           
+  220 00000240 E3A09001        MOV              R9,#1       ;R9 =1(used as mask
+                                                            )
+  221 00000244 E3580000 
+                       SUB11   CMP              R8,#0       ;i==0?
+  222 00000248 BA000008        BLT              SUB14
+  223 0000024C E1A07087        MOV              R7,R7,LSL#1 ;R = R<<1
+  224 00000250 E009A834        AND              R10,R9,R4,LSR R8 ;R[0] = N[i]
+  225 00000254 E187700A        ORR              R7,R7,R10
+  226 00000258 E157000B        CMP              R7,R11      ;R>=D?
+  227 0000025C BA000001        BLT              SUB12
+  228 00000260 E047700B        SUB              R7,R7,R11   ;R = R-D
+  229 00000264 E1866819        ORR              R6,R6,R9,LSL R8 ;Q[i] =1
+  230 00000268 E2488001 
+                       SUB12   SUB              R8,R8,#1    ;i = i-1
+  231 0000026C EAFFFFF4        B                SUB11       ;go to SUB11 
+  232 00000270 E1A04006 
+                       SUB14   MOV              R4,R6       ;R4 = R6
+  233 00000274 EAFFFFDF        B                SUB6        ;go to SUB6
+  234 00000278         SUB7
+  235 00000278 E12FFF1E        BX               LR          ;return
+  236 0000027C         
+  237 0000027C         
+  238 0000027C         
+  239 0000027C 54 68 65 
+              72 65 20 
+              61 72 65 
+              20 00 00 
+              00       STR0    DCB              "There are ",0,0,0
+  240 00000289 20 70 72 
+              69 6D 65 
+              73 20 69 
+              6E 20 74 
+              68 65 20 
+              66 69 72 
+              73 74 20 
+              31 30 20 
+              69 6E 74 
+              65 67 65 
+              72 73 2E 
+              0A 00 00 STR1    DCB              " primes in the first 10 intege
+rs.",0x0a,0,0
+  241 000002AD         
+  242 000002AD         
+  243 000002AD         ;
+  244 000002AD         ; subroutines
+  245 000002AD         ; 
+  246 000002AD         ; GET
+  247 000002AD         ;
+  248 000002AD         ; leaf function which returns ASCII character typed in U
+                       ART #1 window in R0
+
+
+
+ARM Macro Assembler    Page 7 
+
+
+  249 000002AD         ;
+  250 000002AD 00 00 00 
+              E59F1078 GET     LDR              R1, =U0LSR  ; R1 -> U0LSR (Line
+                                                             Status Register)
+  251 000002B4 E5910000 
+                       GET0    LDR              R0, [R1]    ; wait until
+  252 000002B8 E2100001        ANDS             R0, #0x01   ; receiver data
+  253 000002BC 0AFFFFFC        BEQ              GET0        ; ready
+  254 000002C0 E59F106C        LDR              R1, =U0RBR  ; R1 -> U0RBR (Rece
+                                                            iver Buffer Registe
+                                                            r)
+  255 000002C4 E5D10000        LDRB             R0, [R1]    ; get received data
+                                                            
+  256 000002C8 E12FFF1E        BX               LR          ; return
+  257 000002CC         
+  258 000002CC         ; 
+  259 000002CC         ; PUT
+  260 000002CC         ;
+  261 000002CC         ; leaf function which sends ASCII character in R0 to UAR
+                       T #1 window
+  262 000002CC         ;
+  263 000002CC E59F105C 
+                       PUT     LDR              R1, =U0LSR  ; R1 -> U0LSR (Line
+                                                             Status Register)
+  264 000002D0 E5D11000        LDRB             R1, [R1]    ; wait until transm
+                                                            it
+  265 000002D4 E2111020        ANDS             R1, R1, #0x20 
+                                                            ; holding register
+  266 000002D8 0AFFFFFB        BEQ              PUT         ; empty
+  267 000002DC E59F1050        LDR              R1, =U0THR  ; R1 -> U0THR
+  268 000002E0 E5C10000        STRB             R0, [R1]    ; output charcter
+  269 000002E4 E59F1044 
+                       PUT0    LDR              R1, =U0LSR  ; R1 -> U0LSR
+  270 000002E8 E5D11000        LDRB             R1, [R1]    ; wait until 
+  271 000002EC E2111040        ANDS             R1, R1, #0x40 ; transmitter
+  272 000002F0 0AFFFFFB        BEQ              PUT0        ; empty (data flush
+                                                            ed)
+  273 000002F4 E12FFF1E        BX               LR          ; return
+  274 000002F8         
+  275 000002F8         ; 
+  276 000002F8         ; PUTS
+  277 000002F8         ;
+  278 000002F8         ; sends NUL terminated ASCII string (address in R0) to U
+                       ART #1 window
+  279 000002F8         ;
+  280 000002F8 E92D4010 
+                       PUTS    PUSH             {R4, LR}    ; push R4 and LR
+  281 000002FC E1A04000        MOV              R4, R0      ; copy R0
+  282 00000300 E4D40001 
+                       PUTS0   LDRB             R0, [R4], #1 ; get character + 
+                                                            increment R4
+  283 00000304 E3500000        CMP              R0, #0      ; 0?
+  284 00000308 0A000001        BEQ              PUTS1       ; return
+  285 0000030C EBFFFFEE        BL               PUT         ; put character
+  286 00000310 EAFFFFFA        B                PUTS0       ; next character
+  287 00000314 E8BD8010 
+                       PUTS1   POP              {R4, PC}    ; pop R4 and PC
+  288 00000318         
+  289 00000318                 END
+
+
+
+ARM Macro Assembler    Page 8 
+
+
+              40010000 
+              E002C000 
+              E000C00C 
+              00000000 
+              00000000 
+              3B9ACA00 
+              E000C014 
+              E000C000 
+Command Line: --debug --xref --diag_suppress=9931 --apcs=interwork --depend=.\o
+bjects\lab6.d -o.\objects\lab6.o -IC:\Keil_v5\ARM\RV31\INC -IC:\Keil_v5\ARM\CMS
+IS\Include -IC:\Keil_v5\ARM\Inc\Philips --predefine="__EVAL SETA 1" --predefine
+="__UVISION_VERSION SETA 516" --list=.\listings\lab6.lst lab6.s
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Relocatable symbols
+
+GET 000002B0
+
+Symbol: GET
+   Definitions
+      At line 250 in file lab6.s
+   Uses
+      None
+Comment: GET unused
+GET0 000002B4
+
+Symbol: GET0
+   Definitions
+      At line 251 in file lab6.s
+   Uses
+      At line 253 in file lab6.s
+Comment: GET0 used once
+L 0000002C
+
+Symbol: L
+   Definitions
+      At line 47 in file lab6.s
+   Uses
+      At line 50 in file lab6.s
+Comment: L used once
+L1 00000050
+
+Symbol: L1
+   Definitions
+      At line 57 in file lab6.s
+   Uses
+      At line 112 in file lab6.s
+      At line 140 in file lab6.s
+
+L12 00000074
+
+Symbol: L12
+   Definitions
+      At line 69 in file lab6.s
+   Uses
+      At line 150 in file lab6.s
+Comment: L12 used once
+L13 00000080
+
+Symbol: L13
+   Definitions
+      At line 73 in file lab6.s
+   Uses
+      At line 82 in file lab6.s
+Comment: L13 used once
+L14 000000A0
+
+Symbol: L14
+   Definitions
+      At line 84 in file lab6.s
+   Uses
+      At line 80 in file lab6.s
+Comment: L14 used once
+L15 000000C4
+
+
+
+
+ARM Macro Assembler    Page 2 Alphabetic symbol ordering
+Relocatable symbols
+
+Symbol: L15
+   Definitions
+      At line 96 in file lab6.s
+   Uses
+      None
+Comment: L15 unused
+L16 00000158
+
+Symbol: L16
+   Definitions
+      At line 142 in file lab6.s
+   Uses
+      At line 152 in file lab6.s
+Comment: L16 used once
+L18 00000100
+
+Symbol: L18
+   Definitions
+      At line 115 in file lab6.s
+   Uses
+      At line 148 in file lab6.s
+Comment: L18 used once
+L2 00000064
+
+Symbol: L2
+   Definitions
+      At line 62 in file lab6.s
+   Uses
+      At line 146 in file lab6.s
+Comment: L2 used once
+L20 000000CC
+
+Symbol: L20
+   Definitions
+      At line 100 in file lab6.s
+   Uses
+      At line 113 in file lab6.s
+Comment: L20 used once
+L21 000000E8
+
+Symbol: L21
+   Definitions
+      At line 108 in file lab6.s
+   Uses
+      At line 105 in file lab6.s
+Comment: L21 used once
+L22 000000EC
+
+Symbol: L22
+   Definitions
+      At line 109 in file lab6.s
+   Uses
+      At line 107 in file lab6.s
+Comment: L22 used once
+L3 0000015C
+
+Symbol: L3
+   Definitions
+      At line 145 in file lab6.s
+
+
+
+ARM Macro Assembler    Page 3 Alphabetic symbol ordering
+Relocatable symbols
+
+   Uses
+      At line 61 in file lab6.s
+      At line 66 in file lab6.s
+
+L30 000000AC
+
+Symbol: L30
+   Definitions
+      At line 88 in file lab6.s
+   Uses
+      At line 86 in file lab6.s
+Comment: L30 used once
+L40 00000104
+
+Symbol: L40
+   Definitions
+      At line 116 in file lab6.s
+   Uses
+      None
+Comment: L40 unused
+L41 0000011C
+
+Symbol: L41
+   Definitions
+      At line 124 in file lab6.s
+   Uses
+      None
+Comment: L41 unused
+L42 00000124
+
+Symbol: L42
+   Definitions
+      At line 128 in file lab6.s
+   Uses
+      At line 141 in file lab6.s
+Comment: L42 used once
+L43 00000140
+
+Symbol: L43
+   Definitions
+      At line 136 in file lab6.s
+   Uses
+      At line 133 in file lab6.s
+Comment: L43 used once
+L44 00000144
+
+Symbol: L44
+   Definitions
+      At line 137 in file lab6.s
+   Uses
+      At line 135 in file lab6.s
+Comment: L44 used once
+L5 0000017C
+
+Symbol: L5
+   Definitions
+      At line 155 in file lab6.s
+   Uses
+      At line 143 in file lab6.s
+
+
+
+ARM Macro Assembler    Page 4 Alphabetic symbol ordering
+Relocatable symbols
+
+Comment: L5 used once
+L6 00000184
+
+Symbol: L6
+   Definitions
+      At line 157 in file lab6.s
+   Uses
+      None
+Comment: L6 unused
+L7 00000188
+
+Symbol: L7
+   Definitions
+      At line 158 in file lab6.s
+   Uses
+      At line 161 in file lab6.s
+Comment: L7 used once
+PUT 000002CC
+
+Symbol: PUT
+   Definitions
+      At line 263 in file lab6.s
+   Uses
+      At line 158 in file lab6.s
+      At line 266 in file lab6.s
+      At line 285 in file lab6.s
+
+PUT0 000002E4
+
+Symbol: PUT0
+   Definitions
+      At line 269 in file lab6.s
+   Uses
+      At line 272 in file lab6.s
+Comment: PUT0 used once
+PUTS 000002F8
+
+Symbol: PUTS
+   Definitions
+      At line 280 in file lab6.s
+   Uses
+      At line 156 in file lab6.s
+      At line 163 in file lab6.s
+
+PUTS0 00000300
+
+Symbol: PUTS0
+   Definitions
+      At line 282 in file lab6.s
+   Uses
+      At line 286 in file lab6.s
+Comment: PUTS0 used once
+PUTS1 00000314
+
+Symbol: PUTS1
+   Definitions
+      At line 287 in file lab6.s
+   Uses
+      At line 284 in file lab6.s
+
+
+
+ARM Macro Assembler    Page 5 Alphabetic symbol ordering
+Relocatable symbols
+
+Comment: PUTS1 used once
+RESET 00000000
+
+Symbol: RESET
+   Definitions
+      At line 19 in file lab6.s
+   Uses
+      None
+Comment: RESET unused
+STOP 000001A0
+
+Symbol: STOP
+   Definitions
+      At line 165 in file lab6.s
+   Uses
+      At line 165 in file lab6.s
+Comment: STOP used once
+STR0 0000027C
+
+Symbol: STR0
+   Definitions
+      At line 239 in file lab6.s
+   Uses
+      At line 155 in file lab6.s
+Comment: STR0 used once
+STR1 00000289
+
+Symbol: STR1
+   Definitions
+      At line 240 in file lab6.s
+   Uses
+      At line 162 in file lab6.s
+Comment: STR1 used once
+SUB0 0000022C
+
+Symbol: SUB0
+   Definitions
+      At line 213 in file lab6.s
+   Uses
+      At line 159 in file lab6.s
+Comment: SUB0 used once
+SUB1 000001A4
+
+Symbol: SUB1
+   Definitions
+      At line 172 in file lab6.s
+   Uses
+      At line 157 in file lab6.s
+Comment: SUB1 used once
+SUB10 00000234
+
+Symbol: SUB10
+   Definitions
+      At line 217 in file lab6.s
+   Uses
+      None
+Comment: SUB10 unused
+SUB11 00000244
+
+
+
+
+ARM Macro Assembler    Page 6 Alphabetic symbol ordering
+Relocatable symbols
+
+Symbol: SUB11
+   Definitions
+      At line 221 in file lab6.s
+   Uses
+      At line 231 in file lab6.s
+Comment: SUB11 used once
+SUB12 00000268
+
+Symbol: SUB12
+   Definitions
+      At line 230 in file lab6.s
+   Uses
+      At line 227 in file lab6.s
+Comment: SUB12 used once
+SUB13 000001F0
+
+Symbol: SUB13
+   Definitions
+      At line 194 in file lab6.s
+   Uses
+      At line 184 in file lab6.s
+Comment: SUB13 used once
+SUB14 00000270
+
+Symbol: SUB14
+   Definitions
+      At line 232 in file lab6.s
+   Uses
+      At line 222 in file lab6.s
+Comment: SUB14 used once
+SUB2 000001A8
+
+Symbol: SUB2
+   Definitions
+      At line 174 in file lab6.s
+   Uses
+      At line 195 in file lab6.s
+Comment: SUB2 used once
+SUB3 000001B4
+
+Symbol: SUB3
+   Definitions
+      At line 179 in file lab6.s
+   Uses
+      None
+Comment: SUB3 unused
+SUB4 000001C4
+
+Symbol: SUB4
+   Definitions
+      At line 183 in file lab6.s
+   Uses
+      At line 193 in file lab6.s
+Comment: SUB4 used once
+SUB5 000001E8
+
+Symbol: SUB5
+   Definitions
+      At line 192 in file lab6.s
+
+
+
+ARM Macro Assembler    Page 7 Alphabetic symbol ordering
+Relocatable symbols
+
+   Uses
+      At line 189 in file lab6.s
+Comment: SUB5 used once
+SUB6 000001F8
+
+Symbol: SUB6
+   Definitions
+      At line 197 in file lab6.s
+   Uses
+      At line 175 in file lab6.s
+      At line 233 in file lab6.s
+
+SUB7 00000278
+
+Symbol: SUB7
+   Definitions
+      At line 234 in file lab6.s
+   Uses
+      At line 199 in file lab6.s
+Comment: SUB7 used once
+SUB8 00000210
+
+Symbol: SUB8
+   Definitions
+      At line 204 in file lab6.s
+   Uses
+      At line 208 in file lab6.s
+Comment: SUB8 used once
+SUB9 00000224
+
+Symbol: SUB9
+   Definitions
+      At line 209 in file lab6.s
+   Uses
+      At line 205 in file lab6.s
+Comment: SUB9 used once
+48 symbols
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Absolute symbols
+
+PINSEL0 E002C000
+
+Symbol: PINSEL0
+   Definitions
+      At line 11 in file lab6.s
+   Uses
+      At line 26 in file lab6.s
+Comment: PINSEL0 used once
+U0LCR E000C00C
+
+Symbol: U0LCR
+   Definitions
+      At line 15 in file lab6.s
+   Uses
+      At line 29 in file lab6.s
+Comment: U0LCR used once
+U0LSR E000C014
+
+Symbol: U0LSR
+   Definitions
+      At line 16 in file lab6.s
+   Uses
+      At line 250 in file lab6.s
+      At line 263 in file lab6.s
+      At line 269 in file lab6.s
+
+U0RBR E000C000
+
+Symbol: U0RBR
+   Definitions
+      At line 13 in file lab6.s
+   Uses
+      At line 254 in file lab6.s
+Comment: U0RBR used once
+U0THR E000C000
+
+Symbol: U0THR
+   Definitions
+      At line 14 in file lab6.s
+   Uses
+      At line 267 in file lab6.s
+Comment: U0THR used once
+5 symbols
+387 symbols in table

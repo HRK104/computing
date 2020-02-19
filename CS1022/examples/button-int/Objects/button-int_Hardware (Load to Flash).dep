@@ -1,0 +1,2 @@
+Dependencies for Project 'button-int', Target 'Hardware (Load to Flash)': (DO NOT MODIFY !)
+F (.\button-int.s)(0x5CA639D1)(--cpu ARM7TDMI --pd "__EVAL SETA 1" -g --apcs=interwork -I C:\Keil_v5\ARM\RV31\INC-I C:\Keil_v5\ARM\CMSIS\Include-I C:\Keil_v5\ARM\Inc\Philips--pd "__UVISION_VERSION SETA 516"--list .\listings\button-int.lst --xref -o .\objects\button-int.o --depend .\objects\button-int.d)
